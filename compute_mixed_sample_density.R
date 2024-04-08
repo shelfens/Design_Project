@@ -127,3 +127,68 @@ print(pourcentage_difference)
    print("OPT 3: pathogen density in infected feces sample [nb ogr / g sample]")
    print(nb_microb_in_infected_feces_OPT3/(prod_infected_pop_infected_feces))
    
+  
+    ################################################################
+   
+   
+   #EXAMPLE FOR Salmonella ,study of Schonning et al. 2006: 
+   
+     X <- 500000             # fictive population size 
+     rate <- 250             # [g/cap/day] 
+     years <- 10             # nb of year to generate
+     
+    # Set parameters for Incidence [log10 nb org / g feces]
+     mean_incidence <- 500   # mean value
+     sd_incidence <- 100     # standard deviation value
+     years <-years  # Number of random numbers to generate (= on for each time year)
+     
+     random_incidence <- rnorm(years, mean_incidence, sd_incidence)/1000 #[%]
+       # here we dived per 1000 to have the incidence in [%] and not in per 100 000
+
+    for (year in 1:years)) {                # compute for each year with a different incidence
+        
+      incidence <-random_incidence[year]    # [%], select the incidence for the corresponding year
+      
+      # Yearly production of non-infected feces by the non infected population :
+         prod_no_infected_pop <- 250*365*(1-incidence)*X  # [g/year]  
+      
+      # Yearly production of infected feces by the infected population :
+         # Set parameters for Excretion Time [days]
+         mean_duration <- 3.6   # mean value
+         sd_duration <- 0.2     # standard deviation value
+         median_duration <- 37  # median value
+         n <- X*incidence  # Number of random numbers to generate (= infected population)
+         
+         
+    }
+   
+
+   
+  
+  
+  
+  # Generate random numbers from a triangular distribution : 
+  # attribute a duration of excretion [days] to each infected person
+  random_duration <- rtriangle(n, min_duration, max_duration, mode_duration)
+  random_duration_rounded = ceiling(random_duration)
+  # We need to round to nearest whole number the values of duration
+  # (to have entires days)
+  
+  #Compute the yearly production of infected feces by the infected population : 
+  prod_infected_pop_infected_feces <- 0
+  for (duration in random_duration_rounded) {
+    prod_infected_pop_infected_feces<-prod_infected_pop_infected_feces+ duration*rate  #[g feces / year]
+  }
+  
+  # Yearly production of non-infected feces by the infected population :
+  prod_infected_pop_non_infected_feces <- 0
+  for (duration in random_duration_rounded) {
+    prod_infected_pop_non_infected_feces<-prod_infected_pop_non_infected_feces+ (365-duration)*rate  #[g feces / year]
+  }
+  
+  #  Total yealy quantity of uninfected feces :
+  tot_non_infected_feces <- prod_infected_pop_non_infected_feces+prod_no_infected_pop
+  
+   
+   
+   
