@@ -46,40 +46,12 @@ for (duration in random_duration_rounded) {
 
 
    
-# Density of microorganisms in the feces sample [OPT1] : 
-  #Generate a fixed excretion density for each person
-
-  # Set parameters for Density [log10 nb org / g feces]
-    min_density <- 4   # Minimum value
-    max_density <- 10   # Maximum value
-    mode_density <- 6   # Mode (most probable value)
-    n <- X*incidence   # Number of random numbers to generate (= infected population)
-
-  # Generate random numbers from a triangular distribution : 
-    # attribute a density of excretion [ nb org / g feces] to each infected person
-    random_density_OPT1 <- ceiling(10^(rtriangle(n, min_density, max_density, mode_density)))
-      # here we take 10^() to convert from log10(nb. of org.) to nb. of org.
-      # also we rounded the value because we can't have half of an organism
-  
-   
-    
-  #Total number of microorganism in infected feces
-   #Compute the concentration of microb. in the yearly production of infected feces : 
-   nb_microb_in_infected_feces_OPT1 <- 0
-   for (i in 1:length(random_duration_rounded)) {
-     nb_microb_in_infected_feces_OPT1<-nb_microb_in_infected_feces_OPT1+ random_duration_rounded[i]*rate*random_density_OPT1[i]
-    }
-
-
-#(there's no OPT2)
-
-   
-# Density of microorganisms [OPT 3]: BEST ONE(?)
+# Density of microorganisms :
   # Generate an excretion density for each excretion of each person
 
 
   #Compute the concentration of microb. in the yearly production of infected feces : 
-   nb_microb_in_infected_feces_OPT3 <- 0 #[nb of org in the yearly production of infected feces]
+   nb_microb_in_infected_feces <- 0 #[nb of org in the yearly production of infected feces]
 
    for (duration in random_duration_rounded) { #go through each person
  
@@ -92,40 +64,27 @@ for (duration in random_duration_rounded) {
         mode_density <- 6   # Mode (most probable value)
         n <-duration  # Number of random numbers to generate (= each time there's an infected excretion)
     
-      random_density_OPT3 <- (10^(rtriangle(n, min_density, max_density, mode_density))) #[nb of org/g of fece]
+      random_density <- (10^(rtriangle(n, min_density, max_density, mode_density))) #[nb of org/g of fece]
         # here we take 10^() to convert from log10(nb. of org.) to nb. of org.
         # also we rounded the value because we can't have half of an organism
       
-     for(density in random_density_OPT3){ #go through each excretion 
-        nb_microb_in_infected_feces_OPT3<- nb_microb_in_infected_feces_OPT3+ rate*density 
+     for(density in random_density){ #go through each excretion 
+        nb_microb_in_infected_feces<- nb_microb_in_infected_feces+ rate*density 
   }
   }
 
-# Let's now compare the two results :
-print("OPT 1: ")
-print(nb_microb_in_infected_feces_OPT1)
-print("OPT 3: ")
-print(nb_microb_in_infected_feces_OPT3)
-
-pourcentage_difference <- ((nb_microb_in_infected_feces_OPT3 - nb_microb_in_infected_feces_OPT1) / nb_microb_in_infected_feces_OPT1) * 100
-print(pourcentage_difference)
 
 
 # Now let's compute the average density of the pathogen in mixed feces from a population :
-   average_pathogen_density_OPT1<-nb_microb_in_infected_feces_OPT1/(tot_non_infected_feces+prod_infected_pop_infected_feces)
-   average_pathogen_density_OPT3<- nb_microb_in_infected_feces_OPT3/(tot_non_infected_feces+prod_infected_pop_infected_feces)
+   average_pathogen_density<- nb_microb_in_infected_feces/(tot_non_infected_feces+prod_infected_pop_infected_feces)
   #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / g feces in mixed population]
    
    # Let's now compare the two results :
-   print("OPT 1: pathogen density in mixed feces sample [nb ogr / g sample] ")
-   print(average_pathogen_density_OPT1)
-   print("OPT 3: pathogen density in mixed feces sample [nb ogr / g sample]")
-   print(average_pathogen_density_OPT3)
+   print("pathogen density in mixed feces sample [nb ogr / g sample]")
+   print(average_pathogen_density)
    
-   print("OPT 1: pathogen density in infected feces  [nb ogr / g sample] ")
-   print(nb_microb_in_infected_feces_OPT1/(prod_infected_pop_infected_feces))
-   print("OPT 3: pathogen density in infected feces sample [nb ogr / g sample]")
-   print(nb_microb_in_infected_feces_OPT3/(prod_infected_pop_infected_feces))
+   print("OPT 3: pathogen density in raw infected feces sample [nb ogr / g sample]")
+   print(nb_microb_in_infected_feces/(prod_infected_pop_infected_feces))
    
   
     ################################################################
@@ -137,15 +96,15 @@ print(pourcentage_difference)
      rate <- 250             # [g/cap/day] 
      years <- 10             # nb of year to generate
      
-    # Set parameters for Incidence [log10 nb org / g feces]
+    # Set parameters for Incidence 
      mean_incidence <- 500   # mean value
      sd_incidence <- 100     # standard deviation value
-     years <-years  # Number of random numbers to generate (= on for each time year)
+     years <-years  # Number of random numbers to generate (= one for each year)
      
      random_incidence <- rnorm(years, mean_incidence, sd_incidence)/1000 #[%]
-       # here we dived per 1000 to have the incidence in [%] and not in per 100 000
+       # here we divided per 1000 to have an incidence in [%] and not in per 100 000
 
-    for (year in 1:years)) {                # compute for each year with a different incidence
+    for (year in 1:years) {                # compute for each year with a different incidence
         
       incidence <-random_incidence[year]    # [%], select the incidence for the corresponding year
       
@@ -159,36 +118,50 @@ print(pourcentage_difference)
          median_duration <- 37  # median value
          n <- X*incidence  # Number of random numbers to generate (= infected population)
          
-         
-    }
+         random_duration <- rnorm(n, mean_duration, sd_duration) # TO MODIFY [days]
+         random_duration_rounded = ceiling(random_duration)  
+           # We need to round to nearest whole number the values of duration
+           # (to have entires days)
+        
+           prod_infected_pop_infected_feces <- 0
+           prod_infected_pop_non_infected_feces <- 0
+           nb_microb_in_infected_feces <- 0 #[nb of org in the yearly production of infected feces]
+           
+           for (duration in random_duration_rounded) {  #go through each person
+             #Compute the yearly production of infected and uninfected feces by the infected population : 
+               prod_infected_pop_infected_feces<-prod_infected_pop_infected_feces+ duration*rate  #[g feces / year]
+               prod_infected_pop_non_infected_feces<-prod_infected_pop_non_infected_feces+ (365-duration)*rate  #[g feces / year]
+            
+             #Compute the concentration of microb. in the yearly production of infected feces : 
+               # Generate random numbers from a normal distribution : 
+               # attribute a density of excretion [ nb org / g feces] to each infected excretion 
+               
+               # Set parameters for Density [log10 nb org / g feces]
+               mean_density <- 13.8   # mean value
+               sd_density <- 2.3   # standard deviation value
+               median_duration <- 9.9*10^5   # median 
+               n <-duration  # Number of random numbers to generate (= each time there's an infected excretion)
+               
+               random_density <- rnorm(n, mean_density, sd_density) # TO MODIFY 
+               random_density_rounded = ceiling(random_density)
+                 #[nb of org/g of fece]
+                 # also we rounded the value because we can't have half of an organism
+               
+               for(density in random_density){ #go through each excretion 
+                 nb_microb_in_infected_feces<- nb_microb_in_infected_feces+ rate*density 
+               }
+           }
+           
+                }
+           
+
+            
+      
+  
    
 
-   
   
   
   
-  # Generate random numbers from a triangular distribution : 
-  # attribute a duration of excretion [days] to each infected person
-  random_duration <- rtriangle(n, min_duration, max_duration, mode_duration)
-  random_duration_rounded = ceiling(random_duration)
-  # We need to round to nearest whole number the values of duration
-  # (to have entires days)
+
   
-  #Compute the yearly production of infected feces by the infected population : 
-  prod_infected_pop_infected_feces <- 0
-  for (duration in random_duration_rounded) {
-    prod_infected_pop_infected_feces<-prod_infected_pop_infected_feces+ duration*rate  #[g feces / year]
-  }
-  
-  # Yearly production of non-infected feces by the infected population :
-  prod_infected_pop_non_infected_feces <- 0
-  for (duration in random_duration_rounded) {
-    prod_infected_pop_non_infected_feces<-prod_infected_pop_non_infected_feces+ (365-duration)*rate  #[g feces / year]
-  }
-  
-  #  Total yealy quantity of uninfected feces :
-  tot_non_infected_feces <- prod_infected_pop_non_infected_feces+prod_no_infected_pop
-  
-   
-   
-   
