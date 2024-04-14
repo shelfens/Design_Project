@@ -54,20 +54,12 @@ for (duration in random_duration_rounded) {
    nb_microb_in_infected_feces <- 0 #[nb of org in the yearly production of infected feces]
 
    for (duration in random_duration_rounded) { #go through each person
- 
-     # Generate random numbers from a triangular distribution : 
-     # attribute a density of excretion [ nb org / g feces] to each infected excretion 
-  
-     # Set parameters for Density [log10 nb org / g feces]
-        min_density <- 4   # Minimum value
-        max_density <- 10   # Maximum value
-        mode_density <- 6   # Mode (most probable value)
+        min_density <- 10^4   # Minimum value
+        max_density <- 10^10   # Maximum value
+        mode_density <- 10^6   # Mode (most probable value)
         n <-duration  # Number of random numbers to generate (= each time there's an infected excretion)
     
-      random_density <- (10^(rtriangle(n, min_density, max_density, mode_density))) #[nb of org/g of fece]
-        # here we take 10^() to convert from log10(nb. of org.) to nb. of org.
-        # also we rounded the value because we can't have half of an organism
-      
+      random_density <- rtriangle(n, min_density, max_density, mode_density) #[nb of org/g of fece]
      for(density in random_density){ #go through each excretion 
         nb_microb_in_infected_feces<- nb_microb_in_infected_feces+ rate*density 
   }
