@@ -153,7 +153,7 @@ for (pathogen in names(durations)) { #for each pathogen
     }
   }
   nb_microb_in_infected_feces_list[[pathogen]] <- nb_microb_in_infected_feces
-  print(nb_microb_in_infected_feces)
+  print(nb_microb_in_infected_feces)#[nb of org in the yearly production of infected feces]
 }
 
 
@@ -165,9 +165,30 @@ average_pathogen_density_list <- list()
 for (pathogen in names(nb_microb_in_infected_feces_list)) {
   # Perform element-wise division and store the result in the result_list
   average_pathogen_density_list[[pathogen]] <- nb_microb_in_infected_feces_list[[pathogen]] / (tot_non_infected_feces[[pathogen]] + prod_infected_pop_infected_feces_list[[pathogen]])
-}
+} #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / g feces in mixed population]
+
+
+
+
 
 #####################EXPOSURE PATHWAY#########################################################
+ingestion <- 0.1 # Assuming the 0.1g ingested as done in the base study (Brooks)
+
+#Transfer rates as indicated in Brooks
+fomite_to_hand <- 0.43
+hand_to_mouth <-0.36
+
+#g ingested
+ingestion_g <- 0.1*fomite_to_hand*hand_to_mouth
+
+# N pathogens ingested
+n_pathogens_ingested <- list()
+
+# Loop through each pathogen
+for (pathogen in names(average_pathogen_density_list)) {
+  # Perform element-wise division and store the result in the result_list
+  n_pathogens_ingested[[pathogen]] <- ingestion_g * average_pathogen_density_list[[pathogen]]
+} #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / g feces in mixed population]
 
 
 
@@ -184,9 +205,10 @@ param_exponential <- data.frame(
   crypto = 0.0042
 )
 
-response_exponential = 1-exp(-param_exponential*dose)
 
-response_beta_poisson = 1-(1+dose/(param_beta_poisson[2,])^(-param_beta_poisson[1,]))
+response_exponential_adeno = 1-exp(-4.172*10^(-1)*n_pathogens_ingested[["adeno"]]) #Dose needs to be adjusted to the INGESTED DOSE
+
+response_beta_poisson = 1-(1+dose/(param_beta_poisson[2,])^(-param_beta_poisson[1,])) #Dose needs to be adjusted to the INGESTED DOSE
 
 
 

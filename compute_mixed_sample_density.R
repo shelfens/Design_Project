@@ -29,6 +29,9 @@ random_duration_rounded = ceiling(random_duration)
   # We need to round to nearest whole number the values of duration
   # (to have entires days)
 
+print(mean(random_duration_rounded))
+
+
 #Compute the yearly production of infected feces by the infected population : 
   prod_infected_pop_infected_feces <- 0
   for (duration in random_duration_rounded) {
@@ -55,13 +58,13 @@ for (duration in random_duration_rounded) {
 
    for (duration in random_duration_rounded) { #go through each person
         min_density <- 10^4   # Minimum value
-        max_density <- 10^10   # Maximum value
+        max_density <- 10^(10)   # Maximum value
         mode_density <- 10^6   # Mode (most probable value)
         n <-duration  # Number of random numbers to generate (= each time there's an infected excretion)
     
-      random_density <- rtriangle(n, min_density, max_density, mode_density) #[nb of org/g of fece]
-     for(density in random_density){ #go through each excretion 
-        nb_microb_in_infected_feces<- nb_microb_in_infected_feces+ rate*density 
+        random_density <- rtriangle(n, min_density, max_density, mode_density) #[nb of org/g of fece]
+        for(density in random_density){ #go through each excretion 
+          nb_microb_in_infected_feces<- nb_microb_in_infected_feces+ rate*density 
   }
   }
 
