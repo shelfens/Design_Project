@@ -124,28 +124,24 @@ for (pathogen in names(nb_microb_in_infected_feces_list)) {
   # Perform element-wise division and store the result in the result_list
   average_pathogen_density_list[[pathogen]] <- nb_microb_in_infected_feces_list[[pathogen]] / (tot_non_infected_feces[[pathogen]] + prod_infected_pop_infected_feces_list[[pathogen]])
 } #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / g feces in mixed population]
+# The multiplication by 10^3 is to go from g to mg 
 
 
 
 
 
 #####################EXPOSURE PATHWAY#########################################################
-ingestion <- 0.1 # Assuming the 0.1g ingested as done in the base study (Brooks)
 
 #Transfer rates as indicated in Brooks
-t_hm <- 0.36
+t_hm <- 0.36 #[]
 t_fh <- 0.43
-#t_gf <-
-a_gf <- (0.1+0.17)/2
-t_exg <- (0.16+0.28)/2
-a_gex <- (0.13+0.25)/2
-#c_ex <-
-
-fomite_to_hand <- 0.43
-hand_to_mouth <-0.36
+t_gf <- 0.27 #to be changed
+#a_gf <- (0.1+0.17)/2*420
+t_exg <- (0.16+0.28)/2 #[mg/cm^2]
+a_gex <- (0.13+0.25)/2*420 #[cm^2]
 
 #g ingested
-ingestion_g <- 0.1*a_gf*t_exg*a_gex*t_fh*t_hm
+ingestion_g <- t_exg*a_gex*t_fh*t_hm*t_gf
 
 # N pathogens ingested
 n_pathogens_ingested <- list()
@@ -153,17 +149,20 @@ n_pathogens_ingested <- list()
 # Loop through each pathogen
 for (pathogen in names(average_pathogen_density_list)) {
   # Perform element-wise division and store the result in the result_list
-  n_pathogens_ingested[[pathogen]] <- ingestion_g * average_pathogen_density_list[[pathogen]]
-} #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / g feces in mixed population]
+  n_pathogens_ingested[[pathogen]] = ingestion_g * average_pathogen_density_list[[pathogen]]/1000
+  print('hi')
+} #[nb org excreted / year ÷ g feces/ year] => [nb. org.  / mg feces in mixed population]
+# division by 1000 is to go from g to mg in order to have consistent units. 
 
-
-
+#something dont work here. it shoulld diminish by 10^(-5), no? whats wrong?
 
 #####################DOSE-RESPONSE###########################################################
 
 # Data for dose response model
 param_beta_poisson <- data.frame(
-  rota = c(0.26, 0.42) # c(alpha, beta)
+  rota = c(0.26, 0.42), # c(alpha, beta)
+  campylo1996 = c(0.145, 7.59),
+  campylo2005 = c(0.024, 0.011)
 )
 
 param_exponential <- data.frame(
@@ -172,9 +171,16 @@ param_exponential <- data.frame(
 )
 
 
-response_exponential_adeno = 1-exp(-4.172*10^(-1)*n_pathogens_ingested[["adeno"]]) #Dose needs to be adjusted to the INGESTED DOSE
 
-response_beta_poisson = 1-(1+dose/(param_beta_poisson[2,])^(-param_beta_poisson[1,])) #Dose needs to be adjusted to the INGESTED DOSE
+# Exponential model
+response_exponential_adeno = 1-exp(-4.172*10^(-1)*n_pathogens_ingested[["adeno"]]) #Dose needs to be adjusted to the INGESTED DOSE
+response_exponential_crypto = 1-exp(-0.0042*n_pathogens_ingested[["crypto"]]) 
+
+# Beta poisson
+response_beta_poisson_rota = 1-(1+n_pathogens_ingested[["rota"]]/(0.26))^(-0.42) #Dose needs to be adjusted to the INGESTED DOSE
+response_beta_poisson_campylo1996 = 1-(1+n_pathogens_ingested[["campylo"]]/(0.145))^(-7.59) #Campylo jejuni
+response_beta_poisson_campylo2005 = 1-(1+n_pathogens_ingested[["campylo"]]/(0.024))^(-0.011)
+response_beta_poisson_salmonellanontyphoide = 1-(1+n_pathogens_ingested[["salm"]]*(2^(1/(0.21))-1)/49.8)^(-0.21)
 
 #####################RISK CHARACTERIZATION##################################################
 
