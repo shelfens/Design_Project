@@ -104,7 +104,7 @@ for (duration in random_duration_rounded) {
       incidence <-random_incidence[year]    # [%], select the incidence for the corresponding year
       
       # Yearly production of non-infected feces by the non infected population :
-         prod_no_infected_pop <- 250*365*(1-incidence)*X  # [g/year]  
+         prod_no_infected_pop <- rate*365*(1-incidence)*X  # [g/year]  
       
       # Yearly production of infected feces by the infected population :
          # Set parameters for Excretion Time [days]

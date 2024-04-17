@@ -5,17 +5,6 @@
   library(triangle)
   library(EnvStats)
 
-# The data given by Schönning follows a normal distribution.
-  
-# We therefore create samples of 10 datapoints following the given normal distribution per pathogen
- # conc_normal_dist <- data.frame(
-  #  rota = c(20.7,2.3,9.8*10^8),
-   # ecoli = c(5.8,1.2, 3.3*10^2),
-    #salmonella = c(13.8,2.3,9.9*10^5),
-    #crypto =  c(17.3,0.6,3.3*10^7),
-    #giardia = c(15.0,1.7,3.3*10^6)
-#  )
-
 #####################HAZARD IDENTIFICATION##################################################
 #####################Definition of parameters###############################################
   
@@ -33,14 +22,14 @@
   
 # Data for Excretion density [nb of org/g of feces]
   excretion_density <- data.frame(
-    adeno = c(10 ^ c(8,10,12)),
-    rota = c(10^c(8,10,12)),
-    campylo = c(10 ^ c(4,6,10)),
-    salm = c(10 ^ c(6,7.5,9)),
-    crypto = c(10 ^ c(6,7,9))
+    adeno = c(8,10,12),
+    rota = c(8,10,12),
+    campylo = c(4,6,10),
+    salm = c(6,7.5,9),
+    crypto = c(6,7,9)
   )
 
-# Data for incidences (same soruce as trinangular distribution) [%]
+# Data for incidences (same soruce as trinangular distribution) [ ]
   inc_df <- data.frame(
     adeno = 0.88/100,
     rota = 1.28/100,
@@ -53,46 +42,18 @@
 X <- 500000             # fictive population size    
 rate <- 250             # [g/cap/day] 
 
-pathogens <- c("rota", "adeno", "campylo", "salm", "crypto")
+pathogens <- c("adeno", "rota", "campylo", "salm", "crypto")
 
 
 # Initialize lists to store results for each pathogen
 prod_infected_pop_infected_feces_list <- list()
 prod_infected_pop_non_infected_feces_list <- list()
 
-# Loop through each pathogen
-for (pathogen in pathogens) {
-  # Set parameters for Duration [days]
-  min_duration <- duration_excretion[1, pathogen]   # Minimum value
-  max_duration <- duration_excretion[3, pathogen]  # Maximum value
-  mode_duration <- duration_excretion[2, pathogen]  # Mode (most probable value)
-  n <- inc_df[1, pathogen] * X  # Number of random numbers to generate (= infected population)
-  
-  # Generate random numbers from a triangular distribution:
-  # attribute a duration of excretion [days] to each infected person
-  # We need to round to nearest whole number the values of duration
-  # (to have entire days)
-  random_duration <- rtriangle(n, min_duration, max_duration, mode_duration)
-  random_duration_rounded <- ceiling(random_duration)
-  
-  # Compute the yearly production of infected feces by the infected population:
-  prod_infected_pop_infected_feces <- sum(random_duration_rounded * rate)  # [g feces / year]
-  
-  # Compute the yearly production of non-infected feces by the infected population:
-  prod_infected_pop_non_infected_feces <- sum((365 - random_duration_rounded) * rate)  # [g feces / year]
-  
-  # Store results for this pathogen
-  prod_infected_pop_infected_feces_list[[pathogen]] <- prod_infected_pop_infected_feces
-  prod_infected_pop_non_infected_feces_list[[pathogen]] <- prod_infected_pop_non_infected_feces
-}
-
-
-
 
 #####################Production of feces, infected and non infected############################
 
 # Yearly production of non-infected feces by the non infected population :
-prod_no_infected_pop <- 250*365*(1-inc_df)*X # [g/year] 
+prod_no_infected_pop <- rate*365*(1-inc_df)*X # [g/year] 
 
 # Yearly production of infected feces by the infected population :
 # Set parameters for Duration [days]
@@ -101,10 +62,7 @@ max_duration <- duration_excretion[3,]  # Maximum value
 mode_duration <- duration_excretion[2,]  # Mode (most probable value)
 n <- inc_df[1,]*X  # Number of random numbers to generate (= infected population)
 
-# Generate random numbers from a triangular distribution : 
-# attribute a duration of excretion [days] to each infected person
-# We need to round to nearest whole number the values of duration
-# (to have entires days)
+
 durations <- list(
   rota = ceiling(rtriangle(n[1,'rota'], min_duration[1, 'rota'], max_duration[1, 'rota'], mode_duration[1,'rota'])),
   adeno = ceiling(rtriangle(n[1,'adeno'], min_duration[1, 'adeno'], max_duration[1, 'adeno'], mode_duration[1,'adeno'])),
@@ -147,7 +105,7 @@ for (pathogen in names(durations)) { #for each pathogen
   nb_microb_in_infected_feces <- 0
   for (duration in durations[[pathogen]]) {  # Change "campylo" to [pathogen]
     n <- duration
-    random_density <- rtriangle(n, min_density[1, pathogen], max_density[1, pathogen], mode_density[1, pathogen])
+    random_density <- (10^(rtriangle(n, min_density[1, pathogen], max_density[1, pathogen], mode_density[1, pathogen])))
     for (density in random_density) {
       nb_microb_in_infected_feces <- nb_microb_in_infected_feces + rate * density
     }
@@ -175,11 +133,19 @@ for (pathogen in names(nb_microb_in_infected_feces_list)) {
 ingestion <- 0.1 # Assuming the 0.1g ingested as done in the base study (Brooks)
 
 #Transfer rates as indicated in Brooks
+t_hm <- 0.36
+t_fh <- 0.43
+#t_gf <-
+a_gf <- (0.1+0.17)/2
+t_exg <- (0.16+0.28)/2
+a_gex <- (0.13+0.25)/2
+#c_ex <-
+
 fomite_to_hand <- 0.43
 hand_to_mouth <-0.36
 
 #g ingested
-ingestion_g <- 0.1*fomite_to_hand*hand_to_mouth
+ingestion_g <- 0.1*a_gf*t_exg*a_gex*t_fh*t_hm
 
 # N pathogens ingested
 n_pathogens_ingested <- list()
@@ -209,8 +175,6 @@ param_exponential <- data.frame(
 response_exponential_adeno = 1-exp(-4.172*10^(-1)*n_pathogens_ingested[["adeno"]]) #Dose needs to be adjusted to the INGESTED DOSE
 
 response_beta_poisson = 1-(1+dose/(param_beta_poisson[2,])^(-param_beta_poisson[1,])) #Dose needs to be adjusted to the INGESTED DOSE
-
-
 
 #####################RISK CHARACTERIZATION##################################################
 
