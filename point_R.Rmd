@@ -1,0 +1,145 @@
+---
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+# Triangular distribution
+
+Prepare the document:
+```{r}
+#clear all variables :
+  rm(list = ls())
+
+#library for traingular distribution :
+  library(triangle)
+  library(EnvStats)
+```
+
+
+Create table with all relevant information:
+```{r}
+df <- data.frame(
+  duration_excretion = c(7, 7, 34, 15, 10),
+  excretion_density = c(10^(10), 10^(10), 10^(6), 10^(7.5), 10^(7)),  
+  incidence_rate = c(0.88/100, 1.28/100, 2.4/100, 0.88/100, 1.28/100),  
+  row.names = c("adeno", "rota", "campylo", "salmonella", "crypto")  
+)
+
+print(df)
+```
+
+
+Define the other parameters:
+- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.
+- rate: This value for the excretion has been taken as a mean value from the studies *XXXX* and *XXXX*
+- pathogens: In this list, we store the name of all the pathogens we listed in the table above
+```{r}
+X <- 500000             # fictive population size    
+rate <- 250             # [g/cap/day] 
+
+pathogens <- colnames(df)
+```
+
+
+## Production of feces
+
+Production of not infected feaces by the part of the population that is not infected [g/year] ???:
+```{r}
+production_non_infected_feaces_by_not_infected_pop <- rate * 365 * (1 - df["incidence_rate"]) * X
+
+production_non_infected_feaces_by_infected_pop <- rate * (365- df["duration_excretion"]) * (df["incidence_rate"]) * X
+
+df['production_non_infected_feaces'] <- production_non_infected_feaces_by_not_infected_pop + production_non_infected_feaces_by_infected_pop
+```
+
+Production of infected feaces by the part of the population that is infected:
+```{r}
+df['production_infected_feaces'] <- rate * df["duration_excretion"] * (df["incidence_rate"]) * X
+```
+
+
+## Calculation of number and density of microorganism
+
+The number of Microorganisms is calculated with help of the excretion density of the pathogens
+```{r}
+df['nr_pathogens_total'] <- df['production_infected_feaces']*df['excretion_density']
+```
+
+The density of microorganisms ins the according number devided by the total number of feaces produced [Nr pathogens / g of feaces]. 
+```{r}
+df['density'] <- df['nr_pathogens_total'] / df['production_non_infected_feaces']
+```
+
+
+## Exposure pathway
+
+Definition of parameters:
+* t_hm: Transfer rate hand-mouth
+* t_fh: Transfer rate fomite-hand
+* t_gf: Transfer rate gloves-fomite
+* t_exg: Transfer rate excreta-fomite
+* a_gex: Area in contact between gloves and excreta
+```{r}
+t_hm <- 0.36 #[]
+t_fh <- 0.43 #[]
+t_gf <- 0.27 #[]
+t_exg <- (0.16+0.28)/2 #[mg/cm^2]
+a_gex <- (0.13+0.25)/2*420 #[cm^2]
+```
+
+We are using the equation we have seen in the Methods part:
+$$
+C_{Mf} = T_{H\rightarrow M} \times T_{F\rightarrow H} \times T_{G\rightarrow F} \times A_{GF} \times T_{Ex\rightarrow G} \times A_{GEx} \times C_{Ex}
+$$
+
+We first calculate the pathogen loss across the pathway, and combine it then with the densities. 
+```{r}
+ingestion_g <- t_exg*a_gex*t_fh*t_hm*t_gf
+```
+
+Calculation of number of pathogens ingested. We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide by 1000
+```{r}
+df['number_pathogens_ingested'] <- ingestion_g*df['density'] / 1000
+print(df)
+```
+
+
+## Dose response models
+
+For the dose response models, we work mainly with the exponential model and the beta-poisson model.
+
+**Beta-poisson model:**\n
+The equation used for the Beta-poisson model is the following:
+$$
+1-\left(1+\frac{dose}{\beta}\right)^{-\alpha}
+$$
+This was impemented in the code as following:
+```{r}
+response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota", select = "number_pathogens_ingested")/(0.42))^(-0.26)
+cat("Risk of infection by rotavirus:", response_beta_poisson_rota[[1]], "\n")
+
+response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
+cat("Risk of infection by Campylobacter, using the parameters the study of 1996:", response_beta_poisson_campylo1996[[1]], "\n")
+
+response_beta_poisson_campylo2005 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(0.011))^(-0.024)
+cat("Risk of infection by Campylobacter, using the parameters of the study of 2005:", response_beta_poisson_campylo2005[[1]], "\n")
+```
+
+**Exponential model:**\n
+The equation used for the exponential model was the following:
+$$
+1 - \exp(-r \times \text{dose})
+$$
+This was implemented in the code as following:
+```{r}
+response_exponential_adeno <- 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
+cat("Risk of infection by adenovirus:", response_exponential_adeno[[1]], "\n")
+
+response_exponential_crypto = 1-exp(-0.0042*subset(df, rownames(df) == "crypto", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium:", response_exponential_crypto[[1]], "\n")
+```
+
+
+
+
