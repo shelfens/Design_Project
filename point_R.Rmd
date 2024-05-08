@@ -6,34 +6,36 @@ output:
 ---
 # Triangular distribution
 
-Prepare the document:
+Prepare the document: Delete all the variables that were stored before.
 ```{r}
 #clear all variables :
   rm(list = ls())
-
-#library for traingular distribution :
-  library(triangle)
-  library(EnvStats)
 ```
 
 
-Create table with all relevant information:
+Create table with all relevant information. Our informations were taken from different sources. The data was given in probability distribution. In order to simplify the code and to get a point estimate, we took of the distributions the mean for normal distributions and the mode for triangular distributions. \n
+
+The sources were the following:\n
+- Petterson et al., 2016 (Triangular distributions)\n
+- Schönning et al., 2006 (Normal distributions)\n
+
+This informations can be updated according to your own sources. 
 ```{r}
 df <- data.frame(
-  duration_excretion = c(7, 7, 34, 15, 10),
-  excretion_density = c(10^(10), 10^(10), 10^(6), 10^(7.5), 10^(7)),  
-  incidence_rate = c(0.88/100, 1.28/100, 2.4/100, 0.88/100, 1.28/100),  
-  row.names = c("adeno", "rota", "campylo", "salmonella", "crypto")  
+  duration_excretion = c(7, 7,1.6, 34, 15, 3.6, 10,2.0, 4.5,2.1),
+  excretion_density = c(10^(10), 10^(10),exp(20.7), 10^(6), 10^(7.5), exp(3.8), 10^(7), exp(17.3),exp(15.0), exp(5.8)),  
+  incidence_rate = c(0.88/100, 1.28/100,1200/100000, 2.4/100, 0.88/100, 500/100000, 1.28/100, 200/100000, 1100/100000, 30/100000),  
+  row.names = c("adeno", "rota_triangular", "rota_normal", "campylo", "salmonella_triangular", "salmonella_normal", "crypto_triangular", "crypto_normal", "giardia", "EHEC")  
 )
 
 print(df)
 ```
 
 
-Define the other parameters:
-- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.
-- rate: This value for the excretion has been taken as a mean value from the studies *XXXX* and *XXXX*
-- pathogens: In this list, we store the name of all the pathogens we listed in the table above
+Define the other parameters:\n
+- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.\n
+- rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*\n
+- pathogens: In this list, we store the name of all the pathogens we listed in the table above\n
 ```{r}
 X <- 500000             # fictive population size    
 rate <- 250             # [g/cap/day] 
@@ -44,7 +46,18 @@ pathogens <- colnames(df)
 
 ## Production of feces
 
-Production of not infected feaces by the part of the population that is not infected [g/year] ???:
+In population X, $incidence \times X$ persons are infected and $(1 - incidence) \times X$ persons are not infected during the whole year. When a person is not infected, he or she does not excrete the pathogen.
+
+
+Production of not infected feaces [g/year] is devided into two subparts. For once, the production of the non infected feaces by the non infected population, where the formula is given here below. 
+$$
+rate \left[ \frac{g}{cap.day} \right] \times 365 \left[ \frac{days}{year} \right] \times (1 - \text{incidence}) \times X \left[ \text{cap} \right] = \text{production} \left[ g/year \right]
+$$
+On the other hand, we have the production of the non infected feaces by the infected population, during the time of the year when they are NOT infected. This is given through the formula:
+$$
+\text{rate} \left[ \frac{g}{cap.day} \right] \times (365 - \text{duration excretion} [\text{ days}]) = \text{production} \left[ g/year \right]
+$$
+The total production of non infected feaces is therefore the sum of the two. 
 ```{r}
 production_non_infected_feaces_by_not_infected_pop <- rate * 365 * (1 - df["incidence_rate"]) * X
 
@@ -53,7 +66,11 @@ production_non_infected_feaces_by_infected_pop <- rate * (365- df["duration_excr
 df['production_non_infected_feaces'] <- production_non_infected_feaces_by_not_infected_pop + production_non_infected_feaces_by_infected_pop
 ```
 
-Production of infected feaces by the part of the population that is infected:
+Production of infected feaces by the part of the population that is infected is given through the equation:
+$$
+\text{rate} \left[ \frac{g}{cap.day} \right] \times \text{duration excretion}\left[ days \right] = \text{production} \left[ g/year \right]
+$$
+In the code, this is giving:
 ```{r}
 df['production_infected_feaces'] <- rate * df["duration_excretion"] * (df["incidence_rate"]) * X
 ```
@@ -62,11 +79,19 @@ df['production_infected_feaces'] <- rate * df["duration_excretion"] * (df["incid
 ## Calculation of number and density of microorganism
 
 The number of Microorganisms is calculated with help of the excretion density of the pathogens
+$$
+\text{production} \left[\frac{g}{year} \right]*  \text{excretion density} \left[\frac{nb.org}{g} \right] = \text{Nb organisms} \left[\frac{nb. org}{year} \right] 
+$$
+
 ```{r}
 df['nr_pathogens_total'] <- df['production_infected_feaces']*df['excretion_density']
 ```
 
-The density of microorganisms ins the according number devided by the total number of feaces produced [Nr pathogens / g of feaces]. 
+The density of microorganisms ins the according number devided by the total number of feaces produced [Nr pathogens / g of feaces]. It is calculated by the formula:
+$$
+\text{average density} = \frac{\text{nb.org excreted in 1 year}}{\text{total infected feces}} \quad \left[ \frac{\text{nb.org excreted}}{\text{g feces in mixed pop}} \right]
+$$
+
 ```{r}
 df['density'] <- df['nr_pathogens_total'] / df['production_non_infected_feaces']
 ```
@@ -116,14 +141,21 @@ $$
 $$
 This was impemented in the code as following:
 ```{r}
-response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota", select = "number_pathogens_ingested")/(0.42))^(-0.26)
-cat("Risk of infection by rotavirus:", response_beta_poisson_rota[[1]], "\n")
+response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota_triangular", select = "number_pathogens_ingested")/(0.42))^(-0.26)
+cat("Risk of infection by rotavirus, with mode of triangular distribution:", response_beta_poisson_rota[[1]], "\n")
+
+response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota_normal", select = "number_pathogens_ingested")/(0.42))^(-0.26)
+cat("Risk of infection by rotavirus, with mean of normal distribution:", response_beta_poisson_rota[[1]], "\n")
 
 response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
 cat("Risk of infection by Campylobacter, using the parameters the study of 1996:", response_beta_poisson_campylo1996[[1]], "\n")
 
 response_beta_poisson_campylo2005 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(0.011))^(-0.024)
 cat("Risk of infection by Campylobacter, using the parameters of the study of 2005:", response_beta_poisson_campylo2005[[1]], "\n")
+
+response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
+cat("Risk of infection by EHEC:", response_beta_poisson_campylo2005[[1]], "\n")
+
 ```
 
 **Exponential model:**\n
@@ -136,8 +168,15 @@ This was implemented in the code as following:
 response_exponential_adeno <- 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
 cat("Risk of infection by adenovirus:", response_exponential_adeno[[1]], "\n")
 
-response_exponential_crypto = 1-exp(-0.0042*subset(df, rownames(df) == "crypto", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium:", response_exponential_crypto[[1]], "\n")
+response_exponential_crypto1 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium:", response_exponential_crypto1[[1]], "\n")
+
+response_exponential_crypto2 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium:", response_exponential_crypto2[[1]], "\n")
+
+response_exponential_giardia <- 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
+cat("Risk of infection by giardia:", response_exponential_giardia[[1]], "\n")
+
 ```
 
 
