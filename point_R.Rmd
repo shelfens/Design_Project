@@ -27,7 +27,6 @@ df <- data.frame(
   incidence_rate = c(0.88/100, 1.28/100,1200/100000, 2.4/100, 0.88/100, 500/100000, 1.28/100, 200/100000, 1100/100000, 30/100000),  
   row.names = c("adeno", "rota_triangular", "rota_normal", "campylo", "salmonella_triangular", "salmonella_normal", "crypto_triangular", "crypto_normal", "giardia", "EHEC")  
 )
-
 print(df)
 ```
 
@@ -93,7 +92,7 @@ $$
 $$
 
 ```{r}
-df['density'] <- df['nr_pathogens_total'] / df['production_non_infected_feaces']
+df['density'] <- df['nr_pathogens_total'] / (df['production_non_infected_feaces']+df['production_infected_feaces])
 ```
 
 
@@ -123,9 +122,15 @@ We first calculate the pathogen loss across the pathway, and combine it then wit
 ingestion_g <- t_exg*a_gex*t_fh*t_hm*t_gf
 ```
 
+As mentionned in the study of Julian et al., 2018, there was only a small part of the workers touching their mouth. This factor can be included in order to calculate the general risk for workers working with human fertilizer. This factor can be added if we want to asses the risk for an ensemble of worker, and not just one worker touching his/her mouth. 
+```{r}
+f_hm <- (0.14+0.2)/2
+```
+
 Calculation of number of pathogens ingested. We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide by 1000
 ```{r}
-df['number_pathogens_ingested'] <- ingestion_g*df['density'] / 1000
+df['number_pathogens_ingested'] <- ingestion_g*df['density'] /1000
+ # *f_hm
 print(df)
 ```
 
@@ -169,10 +174,10 @@ response_exponential_adeno <- 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df)
 cat("Risk of infection by adenovirus:", response_exponential_adeno[[1]], "\n")
 
 response_exponential_crypto1 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium:", response_exponential_crypto1[[1]], "\n")
+cat("Risk of infection by cryptosporidium, from triangular distribution:", response_exponential_crypto1[[1]], "\n")
 
 response_exponential_crypto2 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium:", response_exponential_crypto2[[1]], "\n")
+cat("Risk of infection by cryptosporidium, from normal distribution:", response_exponential_crypto2[[1]], "\n")
 
 response_exponential_giardia <- 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
 cat("Risk of infection by giardia:", response_exponential_giardia[[1]], "\n")
