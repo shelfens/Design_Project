@@ -18,11 +18,20 @@ The sources were the following:
 - Petterson et al., 2016 (Triangular distributions)
 - Schönning et al., 2006 (Normal distributions)
 
+In order to find the arithmetic mean, we used the following equation for the trinagnular distribution:
+$$
+arithmetic\;mean = \frac{min + mode + max}{3}
+$$
+For the arithmetic mean of the normal distribution, we use the formula.
+$$
+arithmetic\;mean\;=\;e^{\mu+\frac{\sigma^2}{2}}
+$$
+
 This informations can be updated according to your own sources. 
 ```{r}
 df <- data.frame(
-  duration_excretion = c(7, 7,exp(1.6), 34, 15, exp(3.6), 10,exp(2.0), exp(4.5), exp(2.1)),
-  excretion_density = c(10^(10), 10^(10),exp(20.7), 10^(6), 10^(7.5), exp(13.8), 10^(7), exp(17.3),exp(15.0), exp(5.8)),  
+  duration_excretion = c((3+7+12)/3, (3+7+12)/3,exp(1.6 + 1.25^2/2), (15+34+42)/3, (10+15+50)/3, exp(3.6 + 0.2^2/2), (5+10+30)/3, exp(2.0 + 0.85^2/2), exp(4.5 + 0.7^2/2), exp(2.1 + 0.25^2/2)),
+  excretion_density = c((10^8+10^(10)+10^(12))/3, (10^8+10^(10)+10^(12))/3, exp(20.7 + 2.3^2/2), (10^4+10^(6)+10^(10))/3, (10^6+10^(7.5)+10^9)/3, exp(13.8 + 2.3^2/2), (10^6+10^(7)+10^9)/3, exp(17.3 + 0.6^2/2), exp(15.0 + 1.7^2/2), exp(5.8 + 1.2^2/2)),  
   incidence_rate = c(0.88/100, 1.28/100,1200/100000, 2.4/100, 0.88/100, 500/100000, 1.28/100, 200/100000, 1100/100000, 30/100000),  
   row.names = c("adeno", "rota_triangular", "rota_normal", "campylo", "salmonella_triangular", "salmonella_normal", "crypto_triangular", "crypto_normal", "giardia", "EHEC")  
 )
@@ -35,7 +44,7 @@ Define the other parameters:
 - rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*
 - pathogens: In this list, we store the name of all the pathogens we listed in the table above
 ```{r}
-X <- 500000             # fictive population size    
+X <- 500000             # fictive population size  
 rate <- 250             # [g/cap/day] 
 
 pathogens <- colnames(df)
