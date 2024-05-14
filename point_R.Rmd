@@ -1,9 +1,8 @@
 ---
-output:
-  word_document: default
-  html_document: default
-  pdf_document: default
+title: "My Document Title"
+output: html_document
 ---
+
 # Triangular distribution
 
 Prepare the document: Delete all the variables that were stored before.
@@ -13,17 +12,17 @@ Prepare the document: Delete all the variables that were stored before.
 ```
 
 
-Create table with all relevant information. Our informations were taken from different sources. The data was given in probability distribution. In order to simplify the code and to get a point estimate, we took of the distributions the mean for normal distributions and the mode for triangular distributions. \n
+Create table with all relevant information. Our informations were taken from different sources. The data was given in probability distribution. In order to simplify the code and to get a point estimate, we took of the distributions the mean for normal distributions and the mode for triangular distributions. 
 
-The sources were the following:\n
-- Petterson et al., 2016 (Triangular distributions)\n
-- Schönning et al., 2006 (Normal distributions)\n
+The sources were the following:
+- Petterson et al., 2016 (Triangular distributions)
+- Schönning et al., 2006 (Normal distributions)
 
 This informations can be updated according to your own sources. 
 ```{r}
 df <- data.frame(
-  duration_excretion = c(7, 7,1.6, 34, 15, 3.6, 10,2.0, 4.5,2.1),
-  excretion_density = c(10^(10), 10^(10),exp(20.7), 10^(6), 10^(7.5), exp(3.8), 10^(7), exp(17.3),exp(15.0), exp(5.8)),  
+  duration_excretion = c(7, 7,exp(1.6), 34, 15, exp(3.6), 10,exp(2.0), exp(4.5), exp(2.1)),
+  excretion_density = c(10^(10), 10^(10),exp(20.7), 10^(6), 10^(7.5), exp(13.8), 10^(7), exp(17.3),exp(15.0), exp(5.8)),  
   incidence_rate = c(0.88/100, 1.28/100,1200/100000, 2.4/100, 0.88/100, 500/100000, 1.28/100, 200/100000, 1100/100000, 30/100000),  
   row.names = c("adeno", "rota_triangular", "rota_normal", "campylo", "salmonella_triangular", "salmonella_normal", "crypto_triangular", "crypto_normal", "giardia", "EHEC")  
 )
@@ -31,10 +30,10 @@ print(df)
 ```
 
 
-Define the other parameters:\n
-- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.\n
-- rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*\n
-- pathogens: In this list, we store the name of all the pathogens we listed in the table above\n
+Define the other parameters:
+- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.
+- rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*
+- pathogens: In this list, we store the name of all the pathogens we listed in the table above
 ```{r}
 X <- 500000             # fictive population size    
 rate <- 250             # [g/cap/day] 
@@ -67,7 +66,7 @@ df['production_non_infected_feaces'] <- production_non_infected_feaces_by_not_in
 
 Production of infected feaces by the part of the population that is infected is given through the equation:
 $$
-\text{rate} \left[ \frac{g}{cap.day} \right] \times \text{duration excretion}\left[ days \right] = \text{production} \left[ g/year \right]
+\text{rate} \left[ \frac{g}{cap.day} \right] \times \text{duration excretion}\left[ days \right] \times \text{incidence rate}[\text{ }] \times \text{population} = \text{production} \left[ g/year \right]
 $$
 In the code, this is giving:
 ```{r}
@@ -79,7 +78,7 @@ df['production_infected_feaces'] <- rate * df["duration_excretion"] * (df["incid
 
 The number of Microorganisms is calculated with help of the excretion density of the pathogens
 $$
-\text{production} \left[\frac{g}{year} \right]*  \text{excretion density} \left[\frac{nb.org}{g} \right] = \text{Nb organisms} \left[\frac{nb. org}{year} \right] 
+\text{infected production} \left[\frac{g}{year} \right]*  \text{excretion density} \left[\frac{nb.org}{g} \right] = \text{Nb organisms} \left[\frac{nb. org}{year} \right] 
 $$
 
 ```{r}
@@ -92,7 +91,8 @@ $$
 $$
 
 ```{r}
-df['density'] <- df['nr_pathogens_total'] / (df['production_non_infected_feaces']+df['production_infected_feaces])
+df['average_density'] <- df['nr_pathogens_total'] / (df['production_non_infected_feaces']+df['production_infected_feaces'])
+print(df)
 ```
 
 
@@ -129,7 +129,7 @@ f_hm <- (0.14+0.2)/2
 
 Calculation of number of pathogens ingested. We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide by 1000
 ```{r}
-df['number_pathogens_ingested'] <- ingestion_g*df['density'] /1000
+df['number_pathogens_ingested'] <- ingestion_g*df['average_density'] /1000
  # *f_hm
 print(df)
 ```
@@ -159,7 +159,7 @@ response_beta_poisson_campylo2005 = 1-(1+subset(df, rownames(df) == "campylo", s
 cat("Risk of infection by Campylobacter, using the parameters of the study of 2005:", response_beta_poisson_campylo2005[[1]], "\n")
 
 response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
-cat("Risk of infection by EHEC:", response_beta_poisson_campylo2005[[1]], "\n")
+cat("Risk of infection by EHEC:", response_beta_poisson_EHEC[[1]], "\n")
 
 ```
 
@@ -182,7 +182,105 @@ cat("Risk of infection by cryptosporidium, from normal distribution:", response_
 response_exponential_giardia <- 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
 cat("Risk of infection by giardia:", response_exponential_giardia[[1]], "\n")
 
+response_exponential_campylo2005 = 1 - exp(-0.69 * subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested"))
+cat("Risk of infection by campylo, using the parameters of the study of 2005:", response_exponential_campylo2005[[1]], "\n")
+
+
 ```
+
+## Risk taking the decay into account
+
+As it could be observed in our results, the final risk is way too high. The time of survival of the pathogens in human feaces is limited. Increasing the time between the excretion of the fertilizer and its application on the fields can therefore be used as a mitigation method. In order to assess its effectiveness, we take the calculation method implemented in Schönning et al., 2007. The formula used therefore is:
+
+$$
+H_i = M_{i-1} \left[1-\exp\left(-\frac{\ln(10)}{T_{90}}\right)\right]
+$$
+
+There are different inactivation rates in soil and in feaces. The mitigation measure can therefore be applied either to the soil or the feaces - mixing the excreta with soil will decay the pathogens in another pace than the the decay in the pure excreta. The values are taken from Schönning et al., 2007 
+
+```{r}
+df_decay <- data.frame(
+  inactivation_feaces = c(30, 30, 20, 60, 60, 27.5, 70, 70),
+  inactivation_soil = c(35, 35, 25,30, 30,30,495, 495),
+  M1 = c(df["salmonella_triangular", "number_pathogens_ingested"], df["salmonella_normal", "number_pathogens_ingested"], df["EHEC", "number_pathogens_ingested"], df["rota_triangular", "number_pathogens_ingested"], df["rota_normal", "number_pathogens_ingested"], df["giardia", "number_pathogens_ingested"],df["crypto_triangular", "number_pathogens_ingested"], df["crypto_normal", "number_pathogens_ingested"]),
+  row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
+)
+print(df_decay)
+```
+
+### Risk reduction with soil inactivation
+
+With help of the formula mentionned above and the parameters for each pathogen, we can now have a look at the decay of the pathogens over time. For a first step, we will only consider the soil inactivation, assuming an inactivation of the pathogens in the soil. You can change the days you want to have a look at by changing the range in the loop. 
+
+```{r}
+df_decay["day_1"] = df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_soil"]))
+range_end = 12
+
+for (i in 2:range_end) {
+  M <- paste("day_", i, sep = "")
+  M_1 <- paste ("day_", i-1, sep = "")
+  df_decay[M] = df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_soil"]))
+}
+print(df_decay)
+```
+
+
+
+In order to assess the risk going with this values, we recalculate with the dose-response models the different risks:
+```{r}
+
+df_risk <- data.frame(
+)
+
+
+for (i in 1:range_end) {
+  day <- paste("day_", i, sep = "")
+  df_risk["EHEC", day] = 1-(1+subset(df_decay, rownames(df_decay) == "EHEC", select = day)/(39.71))^(-0.373)
+  df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
+  df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
+  df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
+  df_risk["crypto_triangular", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_normal", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+}
+print(df_risk)
+```
+
+### Risk reduction with feaces inactivation
+The simpler inactivation would be the inactivation in the feaces itself. You can just retain the feaces for a certian period of time, and let the pathogen decay itself.
+This section aims to determine the effectiveness of the approach and estimate the time required for the risk to become negligible. 
+
+In a first step, we again calculate the number of pathogens still present with the time passing.
+```{r}
+df_decay["day_1"] = df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
+range_end = 12
+
+for (i in 2:range_end) {
+  M <- paste("day_", i, sep = "")
+  M_1 <- paste ("day_", i-1, sep = "")
+  df_decay[M] = df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
+}
+print(df_decay)
+```
+
+The evaluation of the risk is calculated again as well: 
+```{r}
+
+df_risk <- data.frame(
+)
+
+
+for (i in 1:range_end) {
+  day <- paste("day_", i, sep = "")
+  df_risk["EHEC", day] = 1-(1+subset(df_decay, rownames(df_decay) == "EHEC", select = day)/(39.71))^(-0.373)
+  df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
+  df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
+  df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
+  df_risk["crypto_triangular", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_normal", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+}
+print(df_risk)
+```
+
 
 
 
