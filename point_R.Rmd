@@ -155,6 +155,8 @@ $$
 $$
 This was impemented in the code as following:
 ```{r}
+
+## seems to not be okay, the one for the rota virus
 response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota_triangular", select = "number_pathogens_ingested")/(0.42))^(-0.26)
 cat("Risk of infection by rotavirus, with mode of triangular distribution:", response_beta_poisson_rota[[1]], "\n")
 
@@ -164,11 +166,11 @@ cat("Risk of infection by rotavirus, with mean of normal distribution:", respons
 response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
 cat("Risk of infection by Campylobacter, using the parameters the study of 1996:", response_beta_poisson_campylo1996[[1]], "\n")
 
-response_beta_poisson_campylo2005 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(0.011))^(-0.024)
-cat("Risk of infection by Campylobacter, using the parameters of the study of 2005:", response_beta_poisson_campylo2005[[1]], "\n")
-
 response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
 cat("Risk of infection by EHEC:", response_beta_poisson_EHEC[[1]], "\n")
+
+# Salomenlla
+
 
 ```
 
@@ -182,18 +184,36 @@ This was implemented in the code as following:
 response_exponential_adeno <- 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
 cat("Risk of infection by adenovirus:", response_exponential_adeno[[1]], "\n")
 
-response_exponential_crypto1 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium, from triangular distribution:", response_exponential_crypto1[[1]], "\n")
-
-response_exponential_crypto2 = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium, from normal distribution:", response_exponential_crypto2[[1]], "\n")
-
 response_exponential_giardia <- 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
 cat("Risk of infection by giardia:", response_exponential_giardia[[1]], "\n")
 
 response_exponential_campylo2005 = 1 - exp(-0.69 * subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested"))
 cat("Risk of infection by campylo, using the parameters of the study of 2005:", response_exponential_campylo2005[[1]], "\n")
 
+#response_exponential_noro = 1-exp(-0.66 * subset(df, rownames(df) == "noro", select = "number_pathogens_ingested"))
+#cat("Risk of infection by norovirus:", response_exponential_noro[[1]], "\n")
+
+
+##noro
+
+
+response_exponential_crypto_combined_triangular = 1-exp(-0.4*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium parvum combined, from triangular distribution:", response_exponential_crypto_combined_triangular[[1]], "\n")
+
+response_exponential_crypto_combined_normal = 1-exp(-0.4*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium parvum combined, from normal distribution:", response_exponential_crypto_combined_normal[[1]], "\n")
+
+response_exponential_crypto_parvum_iowa_triangular = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium parvum iowa, from triangular distribution:", response_exponential_crypto_parvum_iowa_triangular[[1]], "\n")
+
+response_exponential_crypto_parvum_iowa_normal = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium parvum iowa, from normal distribution:", response_exponential_crypto_parvum_iowa_normal[[1]], "\n")
+
+response_exponential_crypto_hominis_triangular= 1-exp(-0.76*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium hominis, from triangular distribution:", response_exponential_crypto_hominis_triangular[[1]], "\n")
+
+response_exponential_crypto_hominis_normal = 1-exp(-0.76*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+cat("Risk of infection by cryptosporidium hominis, from normal distribution:", response_exponential_crypto_hominis_normal[[1]], "\n")
 
 ```
 
@@ -248,10 +268,15 @@ for (i in 1:range_end) {
   df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
   df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
   df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
-  df_risk["crypto_triangular", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_normal", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+  df_risk["crypto_combined_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_combined_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+  df_risk["crypto_parvum_iowa_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_parvum_iowa_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
+  df_risk["crypto_hominis_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_hominis_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
 }
 print(df_risk)
+
 ```
 
 ### Risk reduction with feaces inactivation
@@ -277,16 +302,20 @@ The evaluation of the risk is calculated again as well:
 df_risk <- data.frame(
 )
 
-
 for (i in 1:range_end) {
   day <- paste("day_", i, sep = "")
   df_risk["EHEC", day] = 1-(1+subset(df_decay, rownames(df_decay) == "EHEC", select = day)/(39.71))^(-0.373)
   df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
   df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
   df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
-  df_risk["crypto_triangular", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_normal", day] = 1-exp(-0.0042*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+  df_risk["crypto_combined_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_combined_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
+  df_risk["crypto_parvum_iowa_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_parvum_iowa_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
+  df_risk["crypto_hominis_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
+  df_risk["crypto_hominis_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
 }
+
 print(df_risk)
 ```
 
