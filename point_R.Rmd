@@ -157,17 +157,16 @@ $$
 ```{r}
 df['total_feces_produced'] <- (df['production_non_infected_feaces']+df['production_infected_feaces'])
 df['average_density'] <- df['nr_pathogens_total'] / df['total_feces_produced']
-print(df)
 ```
 
 ## Exposure pathway
 
 Definition of parameters:
-* t_hm: Transfer rate hand-mouth
-* t_fh: Transfer rate fomite-hand
-* t_gf: Transfer rate gloves-fomite
-* t_exg: Transfer rate excreta-fomite
-* a_gex: Area in contact between gloves and excreta
+- t_hm: Transfer rate hand-mouth
+- t_fh: Transfer rate fomite-hand
+- t_gf: Transfer rate gloves-fomite
+- t_exg: Transfer rate excreta-fomite
+- a_gex: Area in contact between gloves and excreta
 ```{r}
 t_hm <- 0.36 #[]
 t_fh <- 0.43 #[]
@@ -199,7 +198,6 @@ df["rota_normal", "number_pathogens_ingested"] <- df["rota_normal", "number_path
 ```
 
 ## Dose response models
-
 For the dose response models, we work mainly with the exponential model and the beta-poisson model.
 
 **Beta-poisson model:**
@@ -307,17 +305,38 @@ print(df_responses)
 
 In order to know the log reduction we need to have an acceptable risk, we assess the risk for different levels of log reductions. The final risk must be beneath $$10-4$$ infections $$person-1$$ $$year-1$$., as shown above. Whe therefore create a dataframe having the concentrations for the different log reductions and then a second one displaying the according risks.
 ```{r}
-df_log <- data.frame(row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal"))
-df_log["log_0"] <- df_responses["response_yearly"]
+df_log <- data.frame(log_0 = c(df['adeno', "average_density"], 
+                               df['rota_triangular', "average_density"], 
+                               df['rota_normal', "average_density"], 
+                               df['campylo', "average_density"], 
+                               df['salmonella_triangular', "average_density"], 
+                               df['salmonella_normal', "average_density"],
+                               df['EHEC', "average_density"],
+                               df['giardia', "average_density"],
+                               df['crypto_triangular', "average_density"],
+                               df['crypto_normal', "average_density"],
+                               df['noro', "average_density"]),
+  row.names = c("adeno", 
+    "rota_triangular", 
+    "rota_normal", 
+    "campylo", 
+    "salmonella_triangular", 
+    "salmonella_normal", 
+    "EHEC",
+    "giardia",
+    "crypto_triangular", 
+    "crypto_normal", 
+    "noro")
+)
 
-range_end = 8
+
+range_end = 14
 
 for (i in 1:range_end) {
   M <- paste("log_", i, sep = "")
   M_1 <- paste ("log_", i-1, sep = "")
   df_log[M] = df_log[M_1]/10
 }
-
 
 df_risk <- data.frame(
 )
