@@ -1,6 +1,8 @@
 ---
 title: "My Document Title"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Triangular distribution
@@ -17,8 +19,9 @@ Create table with all relevant information. Our informations were taken from dif
 The sources were the following:
 - Petterson et al., 2016 (Triangular distributions)
 - Schönning et al., 2006 (Normal distributions)
+- Jahne et al., 2017 (PERT distribution)
 
-In order to find the arithmetic mean, we used the following equation for the trinagnular distribution:
+In order to find the arithmetic mean, we used the following equation for the triangular distribution:
 $$
 arithmetic\;mean = \frac{min + mode + max}{3}
 $$
@@ -26,15 +29,68 @@ For the arithmetic mean of the normal distribution, we use the formula.
 $$
 arithmetic\;mean\;=\;e^{\mu+\frac{\sigma^2}{2}}
 $$
+For the arithmetic mean of the PERT distribution, we used the formula:
+$$
+arithmetic\;mean = \frac{a+4m+b}{6}
+$$
 
 This informations can be updated according to your own sources. 
 ```{r}
 df <- data.frame(
-  duration_excretion = c((3+7+12)/3, (3+7+12)/3,exp(1.6 + 1.25^2/2), (15+34+42)/3, (10+15+50)/3, exp(3.6 + 0.2^2/2), (5+10+30)/3, exp(2.0 + 0.85^2/2), exp(4.5 + 0.7^2/2), exp(2.1 + 0.25^2/2)),
-  excretion_density = c((10^8+10^(10)+10^(12))/3, (10^8+10^(10)+10^(12))/3, exp(20.7 + 2.3^2/2), (10^4+10^(6)+10^(10))/3, (10^6+10^(7.5)+10^9)/3, exp(13.8 + 2.3^2/2), (10^6+10^(7)+10^9)/3, exp(17.3 + 0.6^2/2), exp(15.0 + 1.7^2/2), exp(5.8 + 1.2^2/2)),  
-  incidence_rate = c(0.88/100, 1.28/100,1200/100000, 2.4/100, 0.88/100, 500/100000, 1.28/100, 200/100000, 1100/100000, 30/100000),  
-  row.names = c("adeno", "rota_triangular", "rota_normal", "campylo", "salmonella_triangular", "salmonella_normal", "crypto_triangular", "crypto_normal", "giardia", "EHEC")  
+  duration_excretion = c(
+    (3+7+12)/3, 
+    (3+7+12)/3,
+    exp(1.6 + 1.25^2/2), 
+    (15+34+42)/3, 
+    (10+15+50)/3, 
+    exp(3.6 + 0.2^2/2), 
+    (5+10+30)/3, 
+    exp(2.0 + 0.85^2/2),
+    exp(4.5 + 0.7^2/2),
+    exp(2.1 + 0.25^2/2), 
+    (13+4*28+56)/6
+    ),
+  excretion_density = c(
+    (10^8+10^(10)+10^(12))/3, 
+    (10^8+10^(10)+10^(12))/3, 
+    exp(20.7 + 2.3^2/2), 
+    (10^4+10^(6)+10^(10))/3, 
+    (10^6+10^(7.5)+10^9)/3, 
+    exp(13.8 + 2.3^2/2), 
+    (10^6+10^(7)+10^9)/3, 
+    exp(17.3 + 0.6^2/2), 
+    exp(15.0 + 1.7^2/2), 
+    exp(5.8 + 1.2^2/2), 
+    (10^(7.5)+4*10^(9.75)+10^(12))/6
+    ),  
+  incidence_rate = c(
+    0.88/100, 
+    1.28/100,
+    1200/100000, 
+    2.4/100, 
+    0.88/100, 
+    500/100000, 
+    1.28/100, 
+    200/100000, 
+    1100/100000, 
+    30/100000, 
+    (428*10^4 + 696*10^4+1025*10^4)/(6*299000000)
+    ),  
+  row.names = c(
+    "adeno", 
+    "rota_triangular", 
+    "rota_normal", 
+    "campylo", 
+    "salmonella_triangular", 
+    "salmonella_normal", 
+    "crypto_triangular", 
+    "crypto_normal", 
+    "giardia", 
+    "EHEC", 
+    "noro"
+    )  
 )
+
 print(df)
 ```
 
@@ -67,7 +123,6 @@ $$
 The total production of non infected feaces is therefore the sum of the two. 
 ```{r}
 production_non_infected_feaces_by_not_infected_pop <- rate * 365 * (1 - df["incidence_rate"]) * X
-
 production_non_infected_feaces_by_infected_pop <- rate * (365- df["duration_excretion"]) * (df["incidence_rate"]) * X
 
 df['production_non_infected_feaces'] <- production_non_infected_feaces_by_not_infected_pop + production_non_infected_feaces_by_infected_pop
@@ -100,10 +155,10 @@ $$
 $$
 
 ```{r}
-df['average_density'] <- df['nr_pathogens_total'] / (df['production_non_infected_feaces']+df['production_infected_feaces'])
+df['total_feces_produced'] <- (df['production_non_infected_feaces']+df['production_infected_feaces'])
+df['average_density'] <- df['nr_pathogens_total'] / df['total_feces_produced']
 print(df)
 ```
-
 
 ## Exposure pathway
 
@@ -131,89 +186,162 @@ We first calculate the pathogen loss across the pathway, and combine it then wit
 ingestion_g <- t_exg*a_gex*t_fh*t_hm*t_gf
 ```
 
-As mentionned in the study of Julian et al., 2018, there was only a small part of the workers touching their mouth. This factor can be included in order to calculate the general risk for workers working with human fertilizer. This factor can be added if we want to asses the risk for an ensemble of worker, and not just one worker touching his/her mouth. 
-```{r}
-f_hm <- (0.14+0.2)/2
-```
-
-Calculation of number of pathogens ingested. We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide by 1000
+After having calculated the exposure pathway, we want to apply this on the number of pathogens ingested. There are two particularities of the data, that are adapted in this part of the code:
+- We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide the average pathogen density by 1000
+- For the rota virus, we need the dose in the unit [FFU]. The transformation between nr of pathogens and FFU is given by the multiplication by 1900. $$dose\;[nb. org] = dose\;[FFU]*1900$$
 ```{r}
 df['number_pathogens_ingested'] <- ingestion_g*df['average_density'] /1000
- # *f_hm
-print(df)
-```
 
+# Multiply the specified cell by 1900 => we need to do this, in order to have the right unit for the dose response model
+df["rota_triangular", "number_pathogens_ingested"] <- df["rota_triangular", "number_pathogens_ingested"] *1900
+df["rota_normal", "number_pathogens_ingested"] <- df["rota_normal", "number_pathogens_ingested"] * 1900
+
+```
 
 ## Dose response models
 
 For the dose response models, we work mainly with the exponential model and the beta-poisson model.
 
-**Beta-poisson model:**\n
+**Beta-poisson model:**
 The equation used for the Beta-poisson model is the following:
 $$
 1-\left(1+\frac{dose}{\beta}\right)^{-\alpha}
 $$
-This was impemented in the code as following:
-```{r}
-
-## seems to not be okay, the one for the rota virus
-response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota_triangular", select = "number_pathogens_ingested")/(0.42))^(-0.26)
-cat("Risk of infection by rotavirus, with mode of triangular distribution:", response_beta_poisson_rota[[1]], "\n")
-
-response_beta_poisson_rota = 1-(1+subset(df, rownames(df) == "rota_normal", select = "number_pathogens_ingested")/(0.42))^(-0.26)
-cat("Risk of infection by rotavirus, with mean of normal distribution:", response_beta_poisson_rota[[1]], "\n")
-
-response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
-cat("Risk of infection by Campylobacter, using the parameters the study of 1996:", response_beta_poisson_campylo1996[[1]], "\n")
-
-response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
-cat("Risk of infection by EHEC:", response_beta_poisson_EHEC[[1]], "\n")
-
-# Salomenlla
-
-
-```
 
 **Exponential model:**\n
 The equation used for the exponential model was the following:
 $$
 1 - \exp(-r \times \text{dose})
 $$
+Those models were implemented with the according parameters given in the report in the following section. The results were then saved in a dataframe, in order to have it all in a more compact way. 
+```{r}
+response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
+response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
+
+
+response_exponential_adeno = 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
+response_exponential_giardia = 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
+response_exponential_campylo2005 = 1 - exp(-0.69 * subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested"))
+response_exponential_noro = 1-exp(-0.66 * subset(df, rownames(df) == "noro", select = "number_pathogens_ingested"))
+response_exponential_rota_normal = 1-exp(-0.47 * subset(df, rownames(df) == "rota_normal", select = "number_pathogens_ingested"))
+response_exponential_rota_triangular = 1-exp(-0.47 * subset(df, rownames(df) == "rota_triangular", select = "number_pathogens_ingested"))
+response_exponential_crypto_combined_triangular = 1-exp(-0.4*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+response_exponential_crypto_combined_normal = 1-exp(-0.4*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+response_exponential_crypto_parvum_iowa_triangular = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+response_exponential_crypto_parvum_iowa_normal = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
+response_exponential_crypto_hominis_triangular= 1-exp(-0.76*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
+response_exponential_crypto_hominis_normal = 1-exp(-0.76*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested"))
+```
+
+```{r}
+df_responses <- data.frame(
+  responses_daily = c(response_beta_poisson_campylo1996[[1]],
+                response_beta_poisson_EHEC[[1]],
+                response_exponential_adeno[[1]], 
+                response_exponential_giardia[[1]], 
+                response_exponential_campylo2005[[1]], 
+                response_exponential_noro[[1]], 
+                response_exponential_rota_normal[[1]], 
+                response_exponential_rota_triangular[[1]], 
+                response_exponential_crypto_combined_triangular[[1]], 
+                response_exponential_crypto_combined_normal[[1]], 
+                response_exponential_crypto_parvum_iowa_triangular[[1]], 
+                response_exponential_crypto_parvum_iowa_normal[[1]], 
+                response_exponential_crypto_hominis_triangular[[1]], 
+                response_exponential_crypto_hominis_normal[[1]]),
+  concentrations = c(df['campylo', "number_pathogens_ingested"],
+                df['EHEC', "number_pathogens_ingested"],
+                df['adeno', "number_pathogens_ingested"],
+                df['giardia', "number_pathogens_ingested"],
+                df['campylo', "number_pathogens_ingested"],
+                df['noro', "number_pathogens_ingested"],
+                df['rota_normal', "number_pathogens_ingested"],
+                df['rota_triangular', "number_pathogens_ingested"],
+                df['crypto_triangular', "number_pathogens_ingested"],
+                df['crypto_normal', "number_pathogens_ingested"],
+                df['crypto_triangular', "number_pathogens_ingested"],
+                df['crypto_normal', "number_pathogens_ingested"],
+                df['crypto_triangular', "number_pathogens_ingested"],
+                df['crypto_normal', "number_pathogens_ingested"]
+                ),
+  row.names =  c("response_exponential_campylo1996",
+                 "response_exponential_EHEC",
+                 "response_exponential_adeno",
+                "response_exponential_giardia",
+                "response_exponential_campylo2005",
+                "response_exponential_noro",
+                "response_exponential_rota_normal",
+                "response_exponential_rota_triangular",
+                "response_exponential_crypto_combined_triangular",
+                "response_exponential_crypto_combined_normal",
+                "response_exponential_crypto_parvum_iowa_triangular",
+                "response_exponential_crypto_parvum_iowa_normal",
+                "response_exponential_crypto_hominis_triangular",
+                "response_exponential_crypto_hominis_normal")
+)
+print(df_responses)
+```
+
+## Log reduction of risk
+The U.S. *Environmental Protection Agency* propose a benchmark for the  the acceptable annual infection risk level of of $$10-4$$ infections $$person-1$$ $$year-1$$.
+
+Thought the exposure pathoway, the point estimation of probability of infection based on a one-time pathogen exposure was computed for each pathogen. In order to compare those results to the U.S. *Environmental Protection Agency* threshold, the probability of infections need to converted on an annual basis. The same procedure is used than in the study of Brooks et al., 2012.
+
+$$
+P_{ann} = 1-(1-P_i)^n
+$$
+$$P_{ann}$$ is the probability of infection based on n, the number of days or exposure events per year. $$P_i$$ is the probability of infection on a one-time pathogen exposure. 
+
+In \cite{brooks_land_2012}, they defined occupational annual exposures as n = 255 d/yr (USEPA, 1997), which correspond approximately to 52 week/year x 5 working days / week.  However, in Switzerland, solid manure is often spread once or twice a year. From these considerations, the value of n=2 was chosen.
+
+$$
+P_{ann} = 1-(1-P_i)^{2}
+$$
+
 This was implemented in the code as following:
 ```{r}
-response_exponential_adeno <- 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
-cat("Risk of infection by adenovirus:", response_exponential_adeno[[1]], "\n")
-
-response_exponential_giardia <- 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
-cat("Risk of infection by giardia:", response_exponential_giardia[[1]], "\n")
-
-response_exponential_campylo2005 = 1 - exp(-0.69 * subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested"))
-cat("Risk of infection by campylo, using the parameters of the study of 2005:", response_exponential_campylo2005[[1]], "\n")
-
-#response_exponential_noro = 1-exp(-0.66 * subset(df, rownames(df) == "noro", select = "number_pathogens_ingested"))
-#cat("Risk of infection by norovirus:", response_exponential_noro[[1]], "\n")
+df_responses["response_yearly"] = 1-(1-df_responses["responses_daily"])^2
+print(df_responses)
+```
 
 
-##noro
+In order to know the log reduction we need to have an acceptable risk, we assess the risk for different levels of log reductions. The final risk must be beneath $$10-4$$ infections $$person-1$$ $$year-1$$., as shown above. Whe therefore create a dataframe having the concentrations for the different log reductions and then a second one displaying the according risks.
+```{r}
+df_log <- data.frame(row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal"))
+df_log["log_0"] <- df_responses["response_yearly"]
+
+range_end = 8
+
+for (i in 1:range_end) {
+  M <- paste("log_", i, sep = "")
+  M_1 <- paste ("log_", i-1, sep = "")
+  df_log[M] = df_log[M_1]/10
+}
 
 
-response_exponential_crypto_combined_triangular = 1-exp(-0.4*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium parvum combined, from triangular distribution:", response_exponential_crypto_combined_triangular[[1]], "\n")
+df_risk <- data.frame(
+)
 
-response_exponential_crypto_combined_normal = 1-exp(-0.4*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium parvum combined, from normal distribution:", response_exponential_crypto_combined_normal[[1]], "\n")
+f <- function(x) {
+  1 - (1 - x)^(2)
+}
 
-response_exponential_crypto_parvum_iowa_triangular = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium parvum iowa, from triangular distribution:", response_exponential_crypto_parvum_iowa_triangular[[1]], "\n")
 
-response_exponential_crypto_parvum_iowa_normal = 1-exp(-0.0042*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium parvum iowa, from normal distribution:", response_exponential_crypto_parvum_iowa_normal[[1]], "\n")
+for (i in 1:range_end) {
+  log <- paste("log_", i, sep = "")
+  df_risk["EHEC", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "EHEC", select = log)/(39.71))^(-0.373), f)
+  df_risk["rota_triangular", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "rota_triangular", select = log)/(0.42))^(-0.26), f)
+  df_risk["rota_normal", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "rota_normal", select = log)/(0.42))^(-0.26), f)
+  df_risk["giardia", log] = sapply(1-exp(-0.0198*subset(df_log, rownames(df_log) == "giardia", select = log)), f)
+  df_risk["crypto_combined_triangular", log] = sapply(1-exp(-0.4*subset(df_log, rownames(df_log) == "crypto_triangular", select = log)), f)
+  df_risk["crypto_combined_normal", log] = sapply(1-exp(-0.4*subset(df_log, rownames(df_log) == "crypto_normal", select = log)) , f)
+  df_risk["crypto_parvum_iowa_triangular", log] = sapply(1-exp(-0.0042*subset(df_log, rownames(df_log) == "crypto_triangular", select = log)), f)
+  df_risk["crypto_parvum_iowa_normal", log] = sapply(1-exp(-0.0042*subset(df_log, rownames(df_log) == "crypto_normal", select = log)), f)
+  df_risk["crypto_hominis_triangular", log] = sapply(1-exp(-0.76*subset(df_log, rownames(df_log) == "crypto_triangular", select = log)), f)
+  df_risk["crypto_hominis_normal", log] = sapply(1-exp(-0.76*subset(df_log, rownames(df_log) == "crypto_normal", select = log)), f)
+}
 
-response_exponential_crypto_hominis_triangular= 1-exp(-0.76*subset(df, rownames(df) == "crypto_triangular", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium hominis, from triangular distribution:", response_exponential_crypto_hominis_triangular[[1]], "\n")
-
-response_exponential_crypto_hominis_normal = 1-exp(-0.76*subset(df, rownames(df) == "crypto_normal", select = "number_pathogens_ingested")) 
-cat("Risk of infection by cryptosporidium hominis, from normal distribution:", response_exponential_crypto_hominis_normal[[1]], "\n")
+print(df_risk)
 
 ```
 
@@ -230,61 +358,34 @@ There are different inactivation rates in soil and in feaces. The mitigation mea
 ```{r}
 df_decay <- data.frame(
   inactivation_feaces = c(30, 30, 20, 60, 60, 27.5, 70, 70),
-  inactivation_soil = c(35, 35, 25,30, 30,30,495, 495),
-  M1 = c(df["salmonella_triangular", "number_pathogens_ingested"], df["salmonella_normal", "number_pathogens_ingested"], df["EHEC", "number_pathogens_ingested"], df["rota_triangular", "number_pathogens_ingested"], df["rota_normal", "number_pathogens_ingested"], df["giardia", "number_pathogens_ingested"],df["crypto_triangular", "number_pathogens_ingested"], df["crypto_normal", "number_pathogens_ingested"]),
+  M1 = c(df["salmonella_triangular", "nr_pathogens_total"], 
+         df["salmonella_normal", "nr_pathogens_total"], 
+         df["EHEC", "nr_pathogens_total"], 
+         df["rota_triangular", "nr_pathogens_total"], 
+         df["rota_normal", "nr_pathogens_total"], 
+         df["giardia", "nr_pathogens_total"],
+         df["crypto_triangular", "nr_pathogens_total"], 
+         df["crypto_normal", "nr_pathogens_total"]),
+  total_feces = c(df["salmonella_triangular", "total_feces_produced"], 
+                  df["salmonella_normal", "total_feces_produced"], 
+                  df["EHEC", "total_feces_produced"], 
+                  df["rota_triangular", "total_feces_produced"], 
+                  df["rota_normal", "total_feces_produced"], 
+                  df["giardia", "total_feces_produced"],
+                  df["crypto_triangular", "total_feces_produced"], 
+                  df["crypto_normal", "total_feces_produced"]),
   row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
 )
 print(df_decay)
 ```
 
-### Risk reduction with soil inactivation
 
-With help of the formula mentionned above and the parameters for each pathogen, we can now have a look at the decay of the pathogens over time. For a first step, we will only consider the soil inactivation, assuming an inactivation of the pathogens in the soil. You can change the days you want to have a look at by changing the range in the loop. 
+## Risk reduction with feaces inactivation
+In order to achieve this log reduction, we somehow need to reduce the concentration of pathogens in the feces. A simple mitigation method would be the retention of the feces for a certain time, alloing the pathogens to decay on themselves.This section aims to determine the effectiveness of the approach and estimate the time required for the risk to become negligible. 
 
+In a first step, we again calculate the number of pathogens still present with the time passing. We calculate the decay on the *total number of pathogens*, and apply then again the formulas we saw above for the *average density* and the *number of pathogens ingested*
 ```{r}
-df_decay["day_1"] = df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_soil"]))
-range_end = 12
-
-for (i in 2:range_end) {
-  M <- paste("day_", i, sep = "")
-  M_1 <- paste ("day_", i-1, sep = "")
-  df_decay[M] = df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_soil"]))
-}
-print(df_decay)
-```
-
-
-
-In order to assess the risk going with this values, we recalculate with the dose-response models the different risks:
-```{r}
-
-df_risk <- data.frame(
-)
-
-
-for (i in 1:range_end) {
-  day <- paste("day_", i, sep = "")
-  df_risk["EHEC", day] = 1-(1+subset(df_decay, rownames(df_decay) == "EHEC", select = day)/(39.71))^(-0.373)
-  df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
-  df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
-  df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
-  df_risk["crypto_combined_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_combined_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
-  df_risk["crypto_parvum_iowa_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_parvum_iowa_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
-  df_risk["crypto_hominis_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_hominis_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
-}
-print(df_risk)
-
-```
-
-### Risk reduction with feaces inactivation
-The simpler inactivation would be the inactivation in the feaces itself. You can just retain the feaces for a certian period of time, and let the pathogen decay itself.
-This section aims to determine the effectiveness of the approach and estimate the time required for the risk to become negligible. 
-
-In a first step, we again calculate the number of pathogens still present with the time passing.
-```{r}
+df_decay["day_0"] = df_decay["M1"]
 df_decay["day_1"] = df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 range_end = 12
 
@@ -293,33 +394,41 @@ for (i in 2:range_end) {
   M_1 <- paste ("day_", i-1, sep = "")
   df_decay[M] = df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 }
-print(df_decay)
+
 ```
 
-The evaluation of the risk is calculated again as well: 
 ```{r}
+df_average_density <- df_decay / df[["total_feces_produced"]]
+df_average_density <- subset(df_average_density, select = -c(M1, inactivation_feaces, total_feces))
 
-df_risk <- data.frame(
+df_nr_path_ingested <- ingestion_g*df_average_density/1000
+
+print(df_nr_path_ingested)
+
+```
+
+We again apply the function $$P_{ann} = 1-(1-P_i)^{255}$$ used to calculate yearly risk values.  
+```{r}
+f <- function(x) {
+  1 - (1 - x)^(2)
+}
+
+df_risk_decay <- data.frame(
 )
 
 for (i in 1:range_end) {
   day <- paste("day_", i, sep = "")
-  df_risk["EHEC", day] = 1-(1+subset(df_decay, rownames(df_decay) == "EHEC", select = day)/(39.71))^(-0.373)
-  df_risk["rota_triangular", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_triangular", select = day)/(0.42))^(-0.26)
-  df_risk["rota_normal", day] = 1-(1+subset(df_decay, rownames(df_decay) == "rota_normal", select = day)/(0.42))^(-0.26)
-  df_risk["giardia", day] = 1-exp(-0.0198*subset(df_decay, rownames(df_decay) == "giardia", select = day))
-  df_risk["crypto_combined_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_combined_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day)) 
-  df_risk["crypto_parvum_iowa_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_parvum_iowa_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
-  df_risk["crypto_hominis_triangular", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_triangular", select = day))
-  df_risk["crypto_hominis_normal", day] = 1-exp(-0.4*subset(df_decay, rownames(df_decay) == "crypto_normal", select = day))
+  df_risk_decay["EHEC", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "EHEC", select = day)/(39.71))^(-0.373), f)
+  df_risk_decay["rota_triangular", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "rota_triangular", select = day)/(0.42))^(-0.26), f)
+  df_risk_decay["rota_normal", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "rota_normal", select = day)/(0.42))^(-0.26), f)
+  df_risk_decay["giardia", day] = sapply(1-exp(-0.0198*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "giardia", select = day)), f)
+  df_risk_decay["crypto_combined_triangular", day] = sapply(1-exp(-0.4*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_triangular", select = day)), f)
+  df_risk_decay["crypto_combined_normal", day] = sapply(1-exp(-0.4*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_normal", select = day)) , f)
+  df_risk_decay["crypto_parvum_iowa_triangular", day] = sapply(1-exp(-0.0042*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_triangular", select = day)), f)
+  df_risk_decay["crypto_parvum_iowa_normal", day] = sapply(1-exp(-0.0042*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_normal", select = day)), f)
+  df_risk_decay["crypto_hominis_triangular", day] = sapply(1-exp(-0.76*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_triangular", select = day)), f)
+  df_risk_decay["crypto_hominis_normal", day] = sapply(1-exp(-0.76*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_normal", select = day)), f)
 }
 
-print(df_risk)
+print(df_risk_decay)
 ```
-
-
-
-
-
