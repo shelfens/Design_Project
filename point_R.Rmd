@@ -11,7 +11,6 @@ To start with, we prepare the document and delete all the variables that were st
 ```{r}
 #clear all variables :
   rm(list = ls())
-library(pander)
 
 ```
 
@@ -92,7 +91,7 @@ df <- data.frame(
     )  
 )
 
-pandoc.table(df)
+print(df)
 ```
 
 We define some essential other parameters:\n
@@ -213,7 +212,8 @@ Those models were implemented with the according parameters given in the report 
 response_beta_poisson_campylo1996 = 1-(1+subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested")/(7.59))^(-0.145)
 response_beta_poisson_EHEC <- 1-(1+subset(df, rownames(df) == "EHEC", select = "number_pathogens_ingested")/(39.71))^(-0.373)
 
-
+response_exponential_salmonella_triangular = 1 - exp(-3.97 * 10^(-6) * subset(df, rownames(df) == "salmonella_triangular", select = "number_pathogens_ingested"))
+response_exponential_salmonella_normal = 1 - exp(-3.97 * 10^(-6) * subset(df, rownames(df) == "salmonella_normal", select = "number_pathogens_ingested"))
 response_exponential_adeno = 1 - exp(-4.172 * 10^(-1) * subset(df, rownames(df) == "adeno", select = "number_pathogens_ingested"))
 response_exponential_giardia = 1-exp(-0.0198*subset(df, rownames(df) == "giardia", select = "number_pathogens_ingested")) 
 response_exponential_campylo2005 = 1 - exp(-0.69 * subset(df, rownames(df) == "campylo", select = "number_pathogens_ingested"))
@@ -232,6 +232,8 @@ response_exponential_crypto_hominis_normal = 1-exp(-0.76*subset(df, rownames(df)
 df_responses <- data.frame(
   responses_daily = c(response_beta_poisson_campylo1996[[1]],
                 response_beta_poisson_EHEC[[1]],
+                response_exponential_salmonella_triangular[[1]],
+                response_exponential_salmonella_normal[[1]],
                 response_exponential_adeno[[1]], 
                 response_exponential_giardia[[1]], 
                 response_exponential_campylo2005[[1]], 
@@ -246,6 +248,8 @@ df_responses <- data.frame(
                 response_exponential_crypto_hominis_normal[[1]]),
   concentrations = c(df['campylo', "number_pathogens_ingested"],
                 df['EHEC', "number_pathogens_ingested"],
+                df['salmonella_triangular', "number_pathogens_ingested"],
+                df['salmonella_normal', "number_pathogens_ingested"],
                 df['adeno', "number_pathogens_ingested"],
                 df['giardia', "number_pathogens_ingested"],
                 df['campylo', "number_pathogens_ingested"],
@@ -261,6 +265,8 @@ df_responses <- data.frame(
                 ),
   row.names =  c("response_exponential_campylo1996",
                  "response_exponential_EHEC",
+                 "response_exponential_salmonella_triangular",
+                 "response_exponential_salmonella_normal",
                  "response_exponential_adeno",
                 "response_exponential_giardia",
                 "response_exponential_campylo2005",
@@ -345,6 +351,13 @@ f <- function(x) {
 for (i in 1:range_end) {
   log <- paste("log_", i, sep = "")
   df_risk["EHEC", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "EHEC", select = log)/(39.71))^(-0.373), f)
+  df_risk["salmonella_triangular", log] = sapply(1 - exp(-3.97 * 10^(-6) * subset(df_log, rownames(df_log) == "salmonella_triangular", select = log)), f)
+  df_risk["salmonella_normal", log] = sapply(1 - exp(-3.97 * 10^(-6) * subset(df_log, rownames(df_log) == "salmonella_normal", select = log)), f)
+  df_risk["campylo_2005", log] = sapply(1 - exp(-0.69 * subset(df_log, rownames(df_log) == "campylo", select = log)), f)
+  df_risk["campylo_1996", log] =  sapply(1-(1+subset(df_log, rownames(df_log) == "campylo", select = log)/(7.59))^(-0.145), f)
+  df_risk["giardia", log] =  sapply(1-exp(-0.0198*subset(df_log, rownames(df_log) == "giardia", select = log)), f)
+  df_risk["adeno", log] =  sapply(1 - exp(-4.172 * 10^(-1) * subset(df_log, rownames(df_log) == "adeno", select = log)), f)
+  df_risk["noro", log] = sapply(1-exp(-0.66 * subset(df_log, rownames(df_log) == "noro", select = log)), f)
   df_risk["rota_triangular", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "rota_triangular", select = log)/(0.42))^(-0.26), f)
   df_risk["rota_normal", log] = sapply(1-(1+subset(df_log, rownames(df_log) == "rota_normal", select = log)/(0.42))^(-0.26), f)
   df_risk["giardia", log] = sapply(1-exp(-0.0198*subset(df_log, rownames(df_log) == "giardia", select = log)), f)
@@ -355,6 +368,7 @@ for (i in 1:range_end) {
   df_risk["crypto_hominis_triangular", log] = sapply(1-exp(-0.76*subset(df_log, rownames(df_log) == "crypto_triangular", select = log)), f)
   df_risk["crypto_hominis_normal", log] = sapply(1-exp(-0.76*subset(df_log, rownames(df_log) == "crypto_normal", select = log)), f)
 }
+
 
 print(df_risk)
 
@@ -434,6 +448,8 @@ df_risk_decay <- data.frame(
 for (i in 1:range_end) {
   day <- paste("day_", i, sep = "")
   df_risk_decay["EHEC", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "EHEC", select = day)/(39.71))^(-0.373), f)
+  df_risk_decay["salmonella_triangular", day] = sapply(1-exp(-3.97*10^(-6)*subset(df_nr_path_ingested, rownames(df_nr_path_ingested)=="salmonella_triangular", select = day)), f)
+  df_risk_decay["salmonella_normal", day] = sapply(1 - exp(-3.97 * 10^(-6) * subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "salmonella_normal", select = day)), f)
   df_risk_decay["rota_triangular", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "rota_triangular", select = day)/(0.42))^(-0.26), f)
   df_risk_decay["rota_normal", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "rota_normal", select = day)/(0.42))^(-0.26), f)
   df_risk_decay["giardia", day] = sapply(1-exp(-0.0198*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "giardia", select = day)), f)
