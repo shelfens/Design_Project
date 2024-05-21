@@ -1,25 +1,26 @@
 ---
-title: "My Document Title"
+title: "Tool for risk assessment of pathogens in human feces"
 output:
   pdf_document: default
   html_document: default
 ---
 
-# Triangular distribution
+## Initializing code and data
 
-Prepare the document: Delete all the variables that were stored before.
+To start with, we prepare the document and delete all the variables that were stored before. The entire derivation of the code is described in detail in the report.
 ```{r}
 #clear all variables :
   rm(list = ls())
+library(pander)
+
 ```
 
+To start, we create a table with all relevant information. Our informations were taken from different sources. The data was given in probability distribution. In order to simplify the code and to get a point estimate, we took of the distributions the mean for normal distributions and the mode for triangular distributions. 
 
-Create table with all relevant information. Our informations were taken from different sources. The data was given in probability distribution. In order to simplify the code and to get a point estimate, we took of the distributions the mean for normal distributions and the mode for triangular distributions. 
-
-The sources were the following:
-- Petterson et al., 2016 (Triangular distributions)
-- Schönning et al., 2006 (Normal distributions)
-- Jahne et al., 2017 (PERT distribution)
+The sources were the following:\n
+- Petterson et al., 2016 (Triangular distributions)\n
+- Sch\önning et al., 2006 (Normal distributions)\n
+- Jahne et al., 2017 (PERT distribution)\n
 
 In order to find the arithmetic mean, we used the following equation for the triangular distribution:
 $$
@@ -34,7 +35,7 @@ $$
 arithmetic\;mean = \frac{a+4m+b}{6}
 $$
 
-This informations can be updated according to your own sources. 
+With this informations, we create a table with the arithmetic means of the *excretion duration*, the *excretion density* and the *incidence rate*
 ```{r}
 df <- data.frame(
   duration_excretion = c(
@@ -91,14 +92,13 @@ df <- data.frame(
     )  
 )
 
-print(df)
+pandoc.table(df)
 ```
 
-
-Define the other parameters:
-- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.
-- rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*
-- pathogens: In this list, we store the name of all the pathogens we listed in the table above
+We define some essential other parameters:\n
+- X: Fictive population size. This parameter can be adapted according to population. For higher population samples, the variability of the results will be lower.\n
+- rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*\n
+- pathogens: In this list, we store the name of all the pathogens we listed in the table above\n
 ```{r}
 X <- 500000             # fictive population size  
 rate <- 250             # [g/cap/day] 
@@ -107,10 +107,8 @@ pathogens <- colnames(df)
 ```
 
 
-## Production of feces
-
+### Production of feces
 In population X, $incidence \times X$ persons are infected and $(1 - incidence) \times X$ persons are not infected during the whole year. When a person is not infected, he or she does not excrete the pathogen.
-
 
 Production of not infected feaces [g/year] is devided into two subparts. For once, the production of the non infected feaces by the non infected population, where the formula is given here below. 
 $$
@@ -120,7 +118,7 @@ On the other hand, we have the production of the non infected feaces by the infe
 $$
 \text{rate} \left[ \frac{g}{cap.day} \right] \times (365 - \text{duration excretion} [\text{ days}]) = \text{production} \left[ g/year \right]
 $$
-The total production of non infected feaces is therefore the sum of the two. 
+The total production of non infected feaces is the sum of the two. 
 ```{r}
 production_non_infected_feaces_by_not_infected_pop <- rate * 365 * (1 - df["incidence_rate"]) * X
 production_non_infected_feaces_by_infected_pop <- rate * (365- df["duration_excretion"]) * (df["incidence_rate"]) * X
@@ -138,8 +136,7 @@ df['production_infected_feaces'] <- rate * df["duration_excretion"] * (df["incid
 ```
 
 
-## Calculation of number and density of microorganism
-
+### Calculation of number and density of microorganism
 The number of Microorganisms is calculated with help of the excretion density of the pathogens
 $$
 \text{infected production} \left[\frac{g}{year} \right]*  \text{excretion density} \left[\frac{nb.org}{g} \right] = \text{Nb organisms} \left[\frac{nb. org}{year} \right] 
@@ -161,12 +158,12 @@ df['average_density'] <- df['nr_pathogens_total'] / df['total_feces_produced']
 
 ## Exposure pathway
 
-Definition of parameters:
-- t_hm: Transfer rate hand-mouth
-- t_fh: Transfer rate fomite-hand
-- t_gf: Transfer rate gloves-fomite
-- t_exg: Transfer rate excreta-fomite
-- a_gex: Area in contact between gloves and excreta
+Definition of parameters:\n
+- t_hm: Transfer rate hand-mouth\n
+- t_fh: Transfer rate fomite-hand\n
+- t_gf: Transfer rate gloves-fomite\n
+- t_exg: Transfer rate excreta-fomite\n
+- a_gex: Area in contact between gloves and excreta\n
 ```{r}
 t_hm <- 0.36 #[]
 t_fh <- 0.43 #[]
@@ -185,9 +182,9 @@ We first calculate the pathogen loss across the pathway, and combine it then wit
 ingestion_g <- t_exg*a_gex*t_fh*t_hm*t_gf
 ```
 
-After having calculated the exposure pathway, we want to apply this on the number of pathogens ingested. There are two particularities of the data, that are adapted in this part of the code:
-- We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide the average pathogen density by 1000
-- For the rota virus, we need the dose in the unit [FFU]. The transformation between nr of pathogens and FFU is given by the multiplication by 1900. $$dose\;[nb. org] = dose\;[FFU]*1900$$
+After having calculated the exposure pathway, we want to apply this on the number of pathogens ingested. There are two particularities of the data, that are adapted in this part of the code:\n
+- We want to have the result in [nb. org.  / mg feces in mixed population], therefore we need to divide the average pathogen density by 1000\n
+- For the rota virus, we need the dose in the unit [FFU]. The transformation between nr of pathogens and FFU is given by the multiplication by 1900. $$dose\;[nb. org] = dose\;[FFU]*1900$$\n
 ```{r}
 df['number_pathogens_ingested'] <- ingestion_g*df['average_density'] /1000
 
@@ -281,14 +278,14 @@ print(df_responses)
 ```
 
 ## Log reduction of risk
-The U.S. *Environmental Protection Agency* propose a benchmark for the  the acceptable annual infection risk level of of $$10-4$$ infections $$person-1$$ $$year-1$$.
+The U.S. *Environmental Protection Agency* propose a benchmark for the  the acceptable annual infection risk level of of $10^{-4}$ infections $person^{-1}$ $year^{-1}$.
 
 Thought the exposure pathoway, the point estimation of probability of infection based on a one-time pathogen exposure was computed for each pathogen. In order to compare those results to the U.S. *Environmental Protection Agency* threshold, the probability of infections need to converted on an annual basis. The same procedure is used than in the study of Brooks et al., 2012.
 
 $$
 P_{ann} = 1-(1-P_i)^n
 $$
-$$P_{ann}$$ is the probability of infection based on n, the number of days or exposure events per year. $$P_i$$ is the probability of infection on a one-time pathogen exposure. 
+$P_{ann}$ is the probability of infection based on n, the number of days or exposure events per year. $P_i$ is the probability of infection on a one-time pathogen exposure. 
 
 In \cite{brooks_land_2012}, they defined occupational annual exposures as n = 255 d/yr (USEPA, 1997), which correspond approximately to 52 week/year x 5 working days / week.  However, in Switzerland, solid manure is often spread once or twice a year. From these considerations, the value of n=2 was chosen.
 
@@ -302,8 +299,7 @@ df_responses["response_yearly"] = 1-(1-df_responses["responses_daily"])^2
 print(df_responses)
 ```
 
-
-In order to know the log reduction we need to have an acceptable risk, we assess the risk for different levels of log reductions. The final risk must be beneath $$10-4$$ infections $$person-1$$ $$year-1$$., as shown above. Whe therefore create a dataframe having the concentrations for the different log reductions and then a second one displaying the according risks.
+In order to know the log reduction we need to have an acceptable risk, we assess the risk for different levels of log reductions. The final risk must be beneath $10^{-4}$ infections $person^{-1}$ $year^{-1}$., as shown above. Whe therefore create a dataframe having the concentrations for the different log reductions and then a second one displaying the according risks.
 ```{r}
 df_log <- data.frame(log_0 = c(df['adeno', "average_density"], 
                                df['rota_triangular', "average_density"], 
