@@ -7,7 +7,7 @@ output:
 
 ## Initializing code and data
 
-To start with, we prepare the document and delete all the variables that were stored before. The entire derivation of the code is described in detail in the report.
+Before starting with the main code, we prepare the document and delete all the variables that were stored before. The entire derivation of the code is described in detail in the report.
 ```{r}
 #clear all variables :
   rm(list = ls())
@@ -145,7 +145,7 @@ $$
 df['nr_pathogens_total'] <- df['production_infected_feaces']*df['excretion_density']
 ```
 
-The density of microorganisms ins the according number devided by the total number of feaces produced [Nr pathogens / g of feaces]. It is calculated by the formula:
+The density of microorganisms is given by the according number devided by the total number of feaces produced [Nr pathogens / g of feaces]. It is calculated by the formula:
 $$
 \text{average density} = \frac{\text{nb.org excreted in 1 year}}{\text{total infected feces}} \quad \left[ \frac{\text{nb.org excreted}}{\text{g feces in mixed pop}} \right]
 $$
@@ -171,7 +171,7 @@ t_exg <- (0.16+0.28)/2 #[mg/cm^2]
 a_gex <- (0.13+0.25)/2*420 #[cm^2]
 ```
 
-We are using the equation we have seen in the Methods part:
+We are using the equation we have seen in the report in the Methods part:
 $$
 C_{Mf} = T_{H\rightarrow M} \times T_{F\rightarrow H} \times T_{G\rightarrow F} \times A_{GF} \times T_{Ex\rightarrow G} \times A_{GEx} \times C_{Ex}
 $$
@@ -340,8 +340,19 @@ for (i in 1:range_end) {
   df_log[M] = df_log[M_1]/10
 }
 
+print(df_log)
+```
+
+```{r}
 df_risk <- data.frame(
 )
+df_log = df_log*ingestion_g / 1000
+
+df_log[c('rota_triangular', 'rota_normal'), ] <- df_log[c('rota_triangular', 'rota_normal'), ] * 1900
+
+print(df_log)
+```
+```{r}
 
 f <- function(x) {
   1 - (1 - x)^(2)
@@ -369,20 +380,19 @@ for (i in 1:range_end) {
   df_risk["crypto_hominis_normal", log] = sapply(1-exp(-0.76*subset(df_log, rownames(df_log) == "crypto_normal", select = log)), f)
 }
 
-
 print(df_risk)
 
 ```
 
 ## Risk taking the decay into account
 
-As it could be observed in our results, the final risk is way too high. The time of survival of the pathogens in human feaces is limited. Increasing the time between the excretion of the fertilizer and its application on the fields can therefore be used as a mitigation method. In order to assess its effectiveness, we take the calculation method implemented in Schönning et al., 2007. The formula used therefore is:
+As it could be observed in our results, the final risk is way too high. The time of survival of the pathogens in human feaces is limited. Increasing the time between the excretion of the fertilizer and its application on the fields can therefore be used as a mitigation method. In order to assess its effectiveness, we take the calculation method implemented in Sch\önning et al., 2007. The formula used therefore is:
 
 $$
 H_i = M_{i-1} \left[1-\exp\left(-\frac{\ln(10)}{T_{90}}\right)\right]
 $$
 
-There are different inactivation rates in soil and in feaces. The mitigation measure can therefore be applied either to the soil or the feaces - mixing the excreta with soil will decay the pathogens in another pace than the the decay in the pure excreta. The values are taken from Schönning et al., 2007 
+There are different inactivation rates in soil and in feaces. The mitigation measure can therefore be applied either to the soil or the feaces - mixing the excreta with soil will decay the pathogens in another pace than the the decay in the pure excreta. The values are taken from Sch\önning et al., 2007 
 
 ```{r}
 df_decay <- data.frame(
@@ -405,9 +415,9 @@ df_decay <- data.frame(
                   df["crypto_normal", "total_feces_produced"]),
   row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
 )
+
 print(df_decay)
 ```
-
 
 ## Risk reduction with feaces inactivation
 In order to achieve this log reduction, we somehow need to reduce the concentration of pathogens in the feces. A simple mitigation method would be the retention of the feces for a certain time, alloing the pathogens to decay on themselves.This section aims to determine the effectiveness of the approach and estimate the time required for the risk to become negligible. 
