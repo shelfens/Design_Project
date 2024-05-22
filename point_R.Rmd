@@ -350,10 +350,6 @@ df_log = df_log*ingestion_g / 1000
 
 df_log[c('rota_triangular', 'rota_normal'), ] <- df_log[c('rota_triangular', 'rota_normal'), ] * 1900
 
-print(df_log)
-```
-```{r}
-
 f <- function(x) {
   1 - (1 - x)^(2)
 }
