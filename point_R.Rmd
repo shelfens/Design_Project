@@ -422,21 +422,44 @@ In a first step, we again calculate the number of pathogens still present with t
 ```{r}
 df_decay["day_0"] = df_decay["M1"]
 df_decay["day_1"] = df_decay["day_0"]-df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
-range_end = 12
+range_end = 550
 
 for (i in 2:range_end) {
   M <- paste("day_", i, sep = "")
   M_1 <- paste ("day_", i-1, sep = "")
   df_decay[M] = df_decay[M_1]-df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 }
-print(df_decay)
+```
+
+In order to print the results in a coherent manner, we recreate the table but only for selected days, that are given in the variable print_days
+```{r}
+df_print <- data.frame(
+  row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
+)
+print_days = c(1,2,3,7,30,60,90, 365, 550)
+
+for (i in print_days) {
+  M <- paste("day_", i, sep = "")
+  df_print[M] = df_decay[M]
+}
+
+print(df_print)
 
 ```
+
 
 ```{r}
 df_average_density <- df_decay / df[["total_feces_produced"]]
 df_average_density <- subset(df_average_density, select = -c(M1, inactivation_feaces, total_feces))
-print(df_average_density)
+
+for (i in print_days) {
+  M <- paste("day_", i, sep = "")
+  df_print[M] = df_average_density[M]
+}
+
+print(df_print)
+
+
 ```
 
 ```{r}
@@ -471,5 +494,17 @@ for (i in 1:range_end) {
   df_risk_decay["crypto_hominis_normal", day] = sapply(1-exp(-0.76*subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "crypto_normal", select = day)), f)
 }
 
-print(df_risk_decay)
+df_print <- data.frame(
+  row.names = c("EHEC", "salmonella_triangular",  "salmonella_normal","rota_triangular", "rota_normal", "giardia", "crypto_combined_triangular", "crypto_combined_normal", "crypto_parvum_iowa_triangular", "crypto_parvum_iowa_normal", "crypto_hominis_triangular", "crypto_hominis_normal")  
+)
+
+
+for (i in print_days) {
+  M <- paste("day_", i, sep = "")
+  df_print[M] = df_risk_decay[M]
+}
+
+print(df_print)
+
+
 ```
