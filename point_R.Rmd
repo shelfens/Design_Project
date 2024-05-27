@@ -436,7 +436,7 @@ In order to print the results in a coherent manner, we recreate the table but on
 df_print <- data.frame(
   row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
 )
-print_days = c(1,2,3,7,30,60,90, 365, 550)
+print_days = c(1,2,3,7,30,60,90, 180, 365, 550)
 
 for (i in print_days) {
   M <- paste("day_", i, sep = "")
@@ -498,7 +498,6 @@ df_print <- data.frame(
   row.names = c("EHEC", "salmonella_triangular",  "salmonella_normal","rota_triangular", "rota_normal", "giardia", "crypto_combined_triangular", "crypto_combined_normal", "crypto_parvum_iowa_triangular", "crypto_parvum_iowa_normal", "crypto_hominis_triangular", "crypto_hominis_normal")  
 )
 
-print(hi)
 for (i in print_days) {
   M <- paste("day_", i, sep = "")
   df_print[M] = df_risk_decay[M]
