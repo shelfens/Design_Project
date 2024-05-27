@@ -435,10 +435,13 @@ for (i in 2:range_end) {
 ```{r}
 df_average_density <- df_decay / df[["total_feces_produced"]]
 df_average_density <- subset(df_average_density, select = -c(M1, inactivation_feaces, total_feces))
+print(df_average_density)
+```
+
+```{r}
 
 df_nr_path_ingested <- ingestion_g*df_average_density/1000
 
-print(df_nr_path_ingested)
 
 ```
 
