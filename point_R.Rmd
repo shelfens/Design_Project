@@ -498,13 +498,12 @@ df_print <- data.frame(
   row.names = c("EHEC", "salmonella_triangular",  "salmonella_normal","rota_triangular", "rota_normal", "giardia", "crypto_combined_triangular", "crypto_combined_normal", "crypto_parvum_iowa_triangular", "crypto_parvum_iowa_normal", "crypto_hominis_triangular", "crypto_hominis_normal")  
 )
 
-
+print(hi)
 for (i in print_days) {
   M <- paste("day_", i, sep = "")
   df_print[M] = df_risk_decay[M]
 }
 
 print(df_print)
-
 
 ```
