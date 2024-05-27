@@ -421,14 +421,15 @@ In order to achieve this log reduction, we somehow need to reduce the concentrat
 In a first step, we again calculate the number of pathogens still present with the time passing. We calculate the decay on the *total number of pathogens*, and apply then again the formulas we saw above for the *average density* and the *number of pathogens ingested*
 ```{r}
 df_decay["day_0"] = df_decay["M1"]
-df_decay["day_1"] = df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
+df_decay["day_1"] = df_decay["day_0"]-df_decay["M1"]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 range_end = 12
 
 for (i in 2:range_end) {
   M <- paste("day_", i, sep = "")
   M_1 <- paste ("day_", i-1, sep = "")
-  df_decay[M] = df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
+  df_decay[M] = df_decay[M_1]-df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 }
+print(df_decay)
 
 ```
 
