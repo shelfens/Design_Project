@@ -10,7 +10,9 @@ output:
 Before starting with the main code, we prepare the document and delete all the variables that were stored before. The entire derivation of the code is described in detail in the report.
 ```{r}
 #clear all variables :
+
   rm(list = ls())
+library(ggplot2)
 
 ```
 
@@ -99,7 +101,7 @@ We define some essential other parameters:\n
 - rate: This value for the excretion has been taken as a mean value from the studies *To-Figueras et al., 2000*, *Balcells Gorina, 1989* and *Schouw et al, 2002*\n
 - pathogens: In this list, we store the name of all the pathogens we listed in the table above\n
 ```{r}
-X <- 500000             # fictive population size  
+X <- 500             # fictive population size  
 rate <- 250             # [g/cap/day] 
 
 pathogens <- colnames(df)
@@ -351,7 +353,7 @@ df_log = df_log*ingestion_g / 1000
 df_log[c('rota_triangular', 'rota_normal'), ] <- df_log[c('rota_triangular', 'rota_normal'), ] * 1900
 
 f <- function(x) {
-  1 - (1 - x)^(2)
+  1 - (1 - x)^(12)
 }
 
 
@@ -429,6 +431,7 @@ for (i in 2:range_end) {
   M_1 <- paste ("day_", i-1, sep = "")
   df_decay[M] = df_decay[M_1]-df_decay[M_1]*(1- exp(-log(10)/df_decay["inactivation_feaces"]))
 }
+
 ```
 
 In order to print the results in a coherent manner, we recreate the table but only for selected days, that are given in the variable print_days
@@ -436,7 +439,7 @@ In order to print the results in a coherent manner, we recreate the table but on
 df_print <- data.frame(
   row.names = c("salmonella_triangular", "salmonella_normal",  "EHEC","rota_triangular", "rota_normal", "giardia", "crypto_triangular", "crypto_normal")  
 )
-print_days = c(1,2,3,7,30,60,90, 180, 365, 550)
+print_days = c(0,1,2,3,7,30,60,90, 180, 365, 550)
 
 for (i in print_days) {
   M <- paste("day_", i, sep = "")
@@ -459,8 +462,32 @@ for (i in print_days) {
 
 print(df_print)
 
+```
+
+
+```{r}
+# Transpose the dataframe
+df_transform <- as.data.frame(t(df_average_density))
+
+# Add a column for day
+df_transform$Day <- 1:nrow(df_transform)
+
+# Reshape the data to long format
+df_long <- tidyr::pivot_longer(df_transform, -Day, names_to = "Pathogen", values_to = "Density")
+
+# Plot all densities on the same plot with logarithmic scale
+ggplot(df_long, aes(x = Day, y = Density, color = Pathogen)) +
+  geom_line() +
+  scale_y_log10() +  # Logarithmic scale for the y-axis
+  labs(title = "Density of Pathogens Over Time, log scale",
+       x = "Day",
+       y = "Density") +
+  theme_minimal()
+
 
 ```
+
+
 
 ```{r}
 
@@ -472,13 +499,13 @@ df_nr_path_ingested <- ingestion_g*df_average_density/1000
 We again apply the function $$P_{ann} = 1-(1-P_i)^{255}$$ used to calculate yearly risk values.  
 ```{r}
 f <- function(x) {
-  1 - (1 - x)^(2)
+  1 - (1 - x)^(12)
 }
 
 df_risk_decay <- data.frame(
 )
 
-for (i in 1:range_end) {
+for (i in 0:range_end) {
   day <- paste("day_", i, sep = "")
   df_risk_decay["EHEC", day] = sapply(1-(1+subset(df_nr_path_ingested, rownames(df_nr_path_ingested) == "EHEC", select = day)/(39.71))^(-0.373), f)
   df_risk_decay["salmonella_triangular", day] = sapply(1-exp(-3.97*10^(-6)*subset(df_nr_path_ingested, rownames(df_nr_path_ingested)=="salmonella_triangular", select = day)), f)
@@ -504,5 +531,27 @@ for (i in print_days) {
 }
 
 print(df_print)
-
 ```
+```{r}
+# Transpose the dataframe
+df_transform <- as.data.frame(t(df_risk_decay))
+df_transform['Safe_line'] <- 10^(-4)
+
+# Add a column for day
+df_transform$Day <- 1:nrow(df_transform)
+
+# Reshape the data to long format
+df_long <- tidyr::pivot_longer(df_transform, -Day, names_to = "Pathogen", values_to = "Density")
+
+# Plot all densities on the same plot with logarithmic scale
+ggplot(df_long, aes(x = Day, y = Density, color = Pathogen)) +
+  geom_line() +
+  scale_y_log10() +  # Logarithmic scale for the y-axis
+  labs(title = "Risk of infection of Pathogens Over Time, log scale",
+       x = "Day",
+       y = "Density") +
+  theme_minimal()
+```
+
+
+
