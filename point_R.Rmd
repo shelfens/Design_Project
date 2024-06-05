@@ -465,6 +465,7 @@ print(df_print)
 ```
 
 
+In order to see the development of the densities over time, we display it in form of a log-line plot. 
 ```{r}
 # Transpose the dataframe
 df_transform <- as.data.frame(t(df_average_density))
@@ -482,7 +483,8 @@ ggplot(df_long, aes(x = Day, y = Density, color = Pathogen)) +
   labs(title = "Density of Pathogens Over Time, log scale",
        x = "Day",
        y = "Density") +
-  theme_minimal()
+  theme_minimal()+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, max(df_long$Day)))
 
 
 ```
@@ -532,10 +534,11 @@ for (i in print_days) {
 
 print(df_print)
 ```
+
+In order to see the development of the risk over time, we use a graph to display it for the different organisms. The benchmark for acceptable annual infection risk proposed by the U.S. Environmental protection Agency is displayed in form of a red dashed line at $10^{-4}$.
 ```{r}
 # Transpose the dataframe
 df_transform <- as.data.frame(t(df_risk_decay))
-df_transform['Safe_line'] <- 10^(-4)
 
 # Add a column for day
 df_transform$Day <- 1:nrow(df_transform)
@@ -550,7 +553,9 @@ ggplot(df_long, aes(x = Day, y = Density, color = Pathogen)) +
   labs(title = "Risk of infection of Pathogens Over Time, log scale",
        x = "Day",
        y = "Density") +
-  theme_minimal()
+  theme_minimal() + 
+  geom_hline(yintercept = 10^-4, color = "red", linetype = "dashed", size=1) +
+  scale_x_continuous(expand = c(0, 0), limits = c(0, max(df_long$Day)))
 ```
 
 
